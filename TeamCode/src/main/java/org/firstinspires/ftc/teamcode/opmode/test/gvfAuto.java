@@ -15,12 +15,16 @@ import org.firstinspires.ftc.teamcode.system.paths.P2P.MecanumDrive;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Pose;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Vector;
 import org.firstinspires.ftc.teamcode.system.paths.splines.BelzierCurve;
+import org.firstinspires.ftc.teamcode.system.paths.splines.BelzierCurveTrajectorySegment;
 import org.firstinspires.ftc.teamcode.system.paths.splines.GVFLogic;
+import org.firstinspires.ftc.teamcode.system.paths.splines.Trajectory;
+import org.firstinspires.ftc.teamcode.system.paths.splines.TrajectoryBuilder;
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
-@Autonomous(name = "GVFTest")
-public class gvfTest extends LinearOpMode
+
+@Autonomous(name = "GVFAuto")
+public class gvfAuto extends LinearOpMode
 {
 
     MecanumDrive drive;
@@ -45,39 +49,41 @@ public class gvfTest extends LinearOpMode
         drive = new MecanumDrive(
                 driveBase.FL, driveBase.FR, driveBase.BL, driveBase.BR,
                 MecanumDrive.RunMode.Vector, voltageSupplier);
-        drive.setLocalizer(new Localizer(hardwareMap, new Pose(-48, 0, Math.toRadians(180)), this));
+        drive.setLocalizer(new Localizer(hardwareMap, new Pose(-48, 0, Math.toRadians(0)), this));
 
         BelzierCurve curve = new BelzierCurve(new Point[]{
                 new Point(-48, 0),
                 new Point(0, 0),
+        });
+        BelzierCurve curve1 = new BelzierCurve(new Point[]{
+                new Point(0, 0),
                 new Point(24, 0),
                 new Point(24, -24)
         });
-        GVFLogic gvfLogic = new GVFLogic();
-        gvfLogic.followTangentially = true;
-        gvfLogic.reverse = true;
-        ArrayList<Point> curvePoints = curve.returnCurve();
+        Trajectory trajectory = new TrajectoryBuilder(
+                new BelzierCurveTrajectorySegment(curve))
+                .addSegment(new BelzierCurveTrajectorySegment(curve1))
+                .build();
+
         //drive.setSpeed(1);
+        ArrayList<Point> fullCurve = trajectory.getFullCurve();
         waitForStart();
 
         while(opModeIsActive())
         {
             intakeSubsystem.intakePixelHolderServoState(IntakeSubsystem.IntakePixelHolderServoState.HOLDING);
-            Pose pose = drive.getLocalizer().getPredictedPoseEstimate();
-            Vector power = gvfLogic.calculate(curve, pose); // might want to pass as Pose
-            drive.setTargetVector(power);
-
+            drive.followTrajectory(trajectory);
             drive.update();
 
 
             packet = new TelemetryPacket();
-            for (Point point: curvePoints)
+            for (Point point: fullCurve)
             {
                 //telemetry.addData("POINT", point);
                 packet.fieldOverlay().setFill("black").fillCircle(point.x, point.y, 1);
 
             }
-            packet.fieldOverlay().setFill("Red").fillCircle(pose.getX(), pose.getY(), 2);
+            packet.fieldOverlay().setFill("Red").fillCircle(drive.getLocalizer().getPoseEstimate().getX(),drive.getLocalizer().getPoseEstimate().getY() , 2);
             //packet.fieldOverlay().setFill("orange").fillRect(pose.getX(), pose.getY(), 1, 4).;
             /*telemetry.addData("Heading", Math.toDegrees(drive.getLocalizer().getHeading()));
             telemetry.addData("HeadingScale", gvfLogic.headingS );

@@ -27,6 +27,7 @@ import org.firstinspires.ftc.teamcode.system.accessory.supplier.TimedSupplier;
 import org.firstinspires.ftc.teamcode.system.hardware.Globals;
 import org.firstinspires.ftc.teamcode.system.paths.PurePersuit.CurvePoint;
 import org.firstinspires.ftc.teamcode.system.paths.PurePersuit.MathFunctions;
+import org.firstinspires.ftc.teamcode.system.paths.splines.Trajectory;
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class MecanumDrive
         P2P,
         Vector,
         PP,
-        TeleOP
+        GVF
     }
 
     public static PIDController TRANSLATIONAL_PID = new PIDController(0.044, 0.00000, 0);
@@ -94,7 +95,7 @@ public class MecanumDrive
                 powerVector = new Vector(powerVector.getX(), powerVector.getY() * lateralMultiplier, targetVector.getZ());
                 break;
             case PP:
-                PP();
+                /*PP();*/
                 break;
         }
         if (runMode == RunMode.P2P || runMode == RunMode.PP)
@@ -155,6 +156,7 @@ public class MecanumDrive
         // so y * cos(H) * LateralMulti and x * sin(H) * LateralMulti deals with that
         //double xPow = powerVector.getX() * Math.sin(currentPose.getHeading()) * lateralMultiplier;
         //double yPow = powerVector.getY() * Math.cos(currentPose.getHeading()) * lateralMultiplier;
+
         powerVector = new Vector(powerVector.getX(), powerVector.getY() * lateralMultiplier, headingPower);
     }
 
@@ -164,11 +166,6 @@ public class MecanumDrive
     {
         if (runMode == RunMode.P2P)
         {
-
-            /*frontLeftMotor.setPower(x_rotated + y_rotated + t);
-            backLeftMotor.setPower(x_rotated - y_rotated + t);
-            frontRightMotor.setPower(x_rotated - y_rotated - t);
-            backRightMotor.setPower(x_rotated + y_rotated - t);*/
 
             double actualKs = ks * 12.0 / voltageSupplier.get();
 
@@ -188,76 +185,8 @@ public class MecanumDrive
                     + actualKs * Math.signum(powerVector.getX() - powerVector.getY() + powerVector.getZ());
             BR.setPower(BRPower);
 
-            /*
-            FL.setPower((powerVector.getX() - powerVector.getY() - powerVector.getZ()) * (1 - actualKs) + actualKs * Math.signum(powerVector.getX() - powerVector.getY() - powerVector.getZ()));
-            FR.setPower((powerVector.getX() + powerVector.getY() + powerVector.getZ()) * (1 - actualKs) + actualKs * Math.signum(powerVector.getX() + powerVector.getY() + powerVector.getZ()));
-            BL.setPower((powerVector.getX() + powerVector.getY() - powerVector.getZ()) * (1 - actualKs) + actualKs * Math.signum(powerVector.getX() + powerVector.getY() - powerVector.getZ()));
-            BR.setPower((powerVector.getX() - powerVector.getY() + powerVector.getZ()) * (1 - actualKs) + actualKs * Math.signum(powerVector.getX() - powerVector.getY() + powerVector.getZ()));
-*/
-        } else if (runMode == RunMode.PP)
+        } else if (runMode == RunMode.GVF)
         {
-            /*double strafeSpeed = powerVector.getY();
-            double forwardSpeed = powerVector.getX();
-            double turnSpeed = powerVector.getZ();
-
-            Vector2d input = new Vector2d(strafeSpeed, forwardSpeed);
-            Pose currentPose = localizer.getPredictedPoseEstimate();
-            input = input.rotateBy(0);
-
-            //double distance = Math.hypot(strafeSpeed, forwardSpeed);
-
-        // trying to counter act no pid
-*//*        if (distance < 0.5)
-        {
-            forwardSpeed = 0;
-            strafeSpeed = 0;
-        }*//*
-
-            double theta = -input.angle();
-
-            double[] wheelSpeeds = new double[4];
-            wheelSpeeds[0] = Math.sin(theta + Math.PI / 4); // FL
-            wheelSpeeds[1] = Math.sin(theta - Math.PI / 4); // FR
-            wheelSpeeds[2] = Math.sin(theta - Math.PI / 4); // BL
-            wheelSpeeds[3] = Math.sin(theta + Math.PI / 4); // BR
-
-            normalize(wheelSpeeds, input.magnitude());
-
-            wheelSpeeds[0] += turnSpeed;
-            wheelSpeeds[1] -= turnSpeed;
-            wheelSpeeds[2] += turnSpeed;
-            wheelSpeeds[3] -= turnSpeed;
-
-            normalize(wheelSpeeds); // normalize for like
-            FL.setPower(wheelSpeeds[0]);
-            FR.setPower(wheelSpeeds[1]);
-            BL.setPower(wheelSpeeds[2]);
-            BR.setPower(wheelSpeeds[3]);*/
-            //PIDController translationalPID = new PIDController(1, 0, 0);
-            //PIDController headingPID = new PIDController(1, 0, 0);
-
-            double robotX = powerVector.getX();
-            double robotY = powerVector.getY();
-            double robotTheta = powerVector.getZ();
-            double x = robotX; //translationalPID.calculate(robotX);
-            double y = -robotY; //-translationalPID.calculate(robotY);
-            double theta = -robotTheta; //-headingPID.calculate(AngleWrap(robotTheta));
-            double heading = 180 - localizer.getPredictedPoseEstimate().getHeading();
-
-
-            double x_rotated = (x * Math.cos(heading) - y * Math.sin(heading));
-            double y_rotated = (x * Math.sin(heading) + y * Math.cos(heading));
-
-            double FL = MathUtils.clamp(x_rotated + y_rotated + theta, -1, 1);
-            double BL = MathUtils.clamp(x_rotated - y_rotated + theta, -1, 1);
-            double FR = MathUtils.clamp(x_rotated - y_rotated - theta, -1, 1);
-            double BR = MathUtils.clamp(x_rotated + y_rotated - theta, -1, 1);
-
-
-            this.FL.setPower(FL);
-            this.BL.setPower(BL);
-            this.FR.setPower(FR);
-            this.BR.setPower(BR);
 
 
         } else if(runMode == RunMode.Vector)
@@ -300,10 +229,10 @@ public class MecanumDrive
         this.targetVector = Vector;
     }
 
-    public void setTargetPath(ArrayList<CurvePoint> path)
+    /*public void setTargetPath(ArrayList<CurvePoint> path)
     {
         currentPath = path;
-    }
+    }*/
 
     public RunMode getRunMode()
     {
@@ -333,8 +262,8 @@ public class MecanumDrive
     public boolean reachedTarget(double tolerance)
     {
         if (runMode == RunMode.Vector) return false;
-        if (runMode == RunMode.PP)
-            return localizer.getPoseEstimate().getDistance(currentPath.get(currentPath.size() - 1).toPose()) <= tolerance;
+        /*if (runMode == RunMode.PP)
+            return localizer.getPoseEstimate().getDistance(currentPath.get(currentPath.size() - 1).toPose()) <= tolerance;*/
         return localizer.getPoseEstimate().getDistance(targetPose) <= tolerance;
     }
 
@@ -355,7 +284,77 @@ public class MecanumDrive
         MathUtils.clamp(speed, 0, 1);
         overallMultiplier = speed;
     }
+
+    public void followTrajectory(Trajectory trajectory)
+    {
+        Pose currentPose = localizer.getPredictedPoseEstimate();
+        setTargetVector(trajectory.getPowerVector(currentPose));
+    }
+    public void followTrajectoryTangentially(Trajectory trajectory, boolean reverse)
+    {
+        Pose currentPose = localizer.getPredictedPoseEstimate();
+        setTargetVector(trajectory.getTangentPowerVector(currentPose, reverse));
+    }
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // this is PP crap, doesn't work
     // PP
+
+    /*
     public CurvePoint currentPoint;
     public  CurvePoint lastPoint;
     public  boolean finished = false;
@@ -368,6 +367,9 @@ public class MecanumDrive
         followCurve(currentPath, Math.toRadians(90), currentPose, currentPose.getHeading());
 
     }
+
+
+
 
     public void followCurve(ArrayList<CurvePoint> allPoints, double followAngle, Pose currentPose, double heading){
         if (lookAheadDis == 0) // the initial one should always be the first
@@ -382,7 +384,7 @@ public class MecanumDrive
 
 
         goToPosition(followMe.x, followMe.y, followMe.moveSpeed, followAngle, followMe.turnSpeed, currentPose);
-   /*
+   *//*
         if (finished)
         {
             CurvePoint startPoint = allPoints.get(allPoints.size() -2);
@@ -392,7 +394,7 @@ public class MecanumDrive
             goToHeading(finalPoint.x, finalPoint.y, finalPoint.moveSpeed, followAngle, finalPoint.turnSpeed);
         }
 
-         */
+         *//*
 
         lastPoint = currentPoint;
 
@@ -436,7 +438,7 @@ public class MecanumDrive
                     followMe.setPoint(thisIntersection); //TODO: this only sets the x, y. The other parameters are preserved from the curvepoint declaration
 
 
-                    /*
+                    *//*
                     CurvePoint finalStartLine = pathPoint.get(pathPoint.size() - 2);
                     CurvePoint finalEndLine = pathPoint.get(pathPoint.size() - 1);
                     finalStartLine = retractVector(finalStartLine, finalEndLine);
@@ -445,7 +447,7 @@ public class MecanumDrive
                     if (interFinal.size() > 0)
                     {
                         finished = true;
-                    }*/
+                    }*//*
 
                 }
             }
@@ -460,10 +462,10 @@ public class MecanumDrive
                 }
             }
         }
-        /*if (finished)
+        *//*if (finished)
         {
             followMe = new CurvePoint(pathPoint.get(pathPoint.size()-1));
-        }*/
+        }*//*
 
         return followMe;
     }
@@ -507,13 +509,13 @@ public class MecanumDrive
         input = input.rotateBy(-currentPose.getHeading());
 
         double distance = Math.hypot(strafeSpeed, forwardSpeed);
-        /*
+        *//*
         // trying to counter act no pid
         if (distance < 0.5)
         {
             forwardSpeed = 0;
             strafeSpeed = 0;
-        }*/
+        }*//*
 
         double theta = input.angle();
 
@@ -562,7 +564,7 @@ public class MecanumDrive
             }
         }
 
-    }
+    }*/
 
 
 }

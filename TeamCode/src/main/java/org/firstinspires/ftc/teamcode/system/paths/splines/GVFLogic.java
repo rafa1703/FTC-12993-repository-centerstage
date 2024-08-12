@@ -10,10 +10,8 @@ import org.opencv.core.Point;
 
 public class GVFLogic
 {
-    public static boolean followTangentially = false;
-    public static boolean reverse = false;
-    public double headingS;
-    public double zVector;
+    public boolean followTangentially = false;
+    public boolean reverse = false;
     @NonNull
     public Vector calculate(BelzierCurve curve, Pose pose)
     {
@@ -21,7 +19,7 @@ public class GVFLogic
         Point robot = pose.toPoint();
         Vector endPoint = curve.getEndPoint();
         Vector closestPoint = curve.returnClosestPointOnCurve(robot); //TODO: there are two full loop iterations of all points in the curve
-        double t = curve.returnTheFuckingTOnCurve(robot);
+        double t = curve.returnClosesT(robot);
         Vector derivative = curve.getTangentialVector(t);
         Vector robotToPoint = new Vector(closestPoint.getX() - robot.x, closestPoint.getY() - robot.y);
         Vector robotToEnd = endPoint.subtract(robot);
@@ -59,8 +57,8 @@ public class GVFLogic
         double speed = 1;
         if (robotToEnd.getMagnitude() < 34) // this value
         {
-            // like a weighted average for the speed but interpolation
-            speed = lerp(0.15, speed, robotToEnd.getMagnitude() / 34);
+            // like a weighted average for the speed
+            speed = interpolation(0.15, speed, robotToEnd.getMagnitude() / 34);
         }
         movementVector.scaleBy(speed);
 
@@ -72,11 +70,9 @@ public class GVFLogic
             }
                 double angle = derivative.getAngle();
                 if (reverse) angle += Math.toRadians(180);
-                double headingScale = Math.abs(Math.min(normalizeRadians(angle - pose.getHeading()) / Math.toRadians(70), 1));
+                double headingScale = Math.abs(Math.min(normalizeRadians(angle - pose.getHeading()) / Math.toRadians(70), 1)); // rn i think 70 is the best angle to consider max thing
                 double headingDiff = headingInterpolation(pose.getHeading(), angle, headingScale) - pose.getHeading();  //Math.min(normalizeRadians(derivative.getAngle() - pose.getHeading()) / Math.toRadians(30), 1); // Who the fuck knows if this is gonna work
-                zVector = headingDiff;
-                headingS = headingScale;
-
+                // we want to remove the current heading because interpolation at t = 0 returns the current heading
                 movementVector = new Vector(movementVector.getX(), movementVector.getY(), headingDiff);
 
         }
@@ -99,7 +95,7 @@ public class GVFLogic
         return theta1 + t * diff;
     }
 
-    private double lerp(double p1, double p2, double t) {
+    private double interpolation(double p1, double p2, double t) {
         return (1 - t) * p1 + t * p2;
     }
 
@@ -129,4 +125,23 @@ public class GVFLogic
 
     }
 
+    public void setFollowTangentially(boolean followTangentially)
+    {
+        this.followTangentially = followTangentially;
+    }
+
+    public void setReverse(boolean reverse)
+    {
+        this.reverse = reverse;
+    }
+
+    public boolean isFollowTangentially()
+    {
+        return followTangentially;
+    }
+
+    public boolean isReverse()
+    {
+        return reverse;
+    }
 }

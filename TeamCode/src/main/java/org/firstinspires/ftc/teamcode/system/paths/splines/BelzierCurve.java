@@ -138,7 +138,7 @@ public class BelzierCurve
     }
 
     /**Keep in mind result in rad **/
-    public ArrayList<Double> returnTangentialHeading()
+    public ArrayList<Double> returnTangentialHeadingList()
     {
         ArrayList<Double> curve = new ArrayList<>();
         double t = 0;
@@ -174,6 +174,37 @@ public class BelzierCurve
             }
         }
         return closest;
+    }
+    public double returnClosestDistance(Point point)
+    {
+        ArrayList<Point> curve = returnCurve();
+        double smallerDistance = Double.POSITIVE_INFINITY;
+        for(Point p: curve)
+        {
+            double d = Math.abs(Math.sqrt(Math.pow(p.x - point.x, 2) + Math.pow(p.y - point.y, 2)));
+            if (d <= smallerDistance)
+            {
+                smallerDistance = d;
+            }
+        }
+        return smallerDistance;
+    }
+    /** This shit returns a point where x = t and y = dist **/
+    public Point returnClosestDistanceAndT(Point point)
+    {
+        double closest = 0;
+        double smallerDistance = Double.POSITIVE_INFINITY;
+        for(int i = 0; i <= interval; i++)
+        {
+            Point p = parametric(i * (1/ interval));
+            double d = Math.hypot(p.x - point.x, p.y - point.y) * Math.hypot(p.x - point.x, p.y - point.y);
+            if (d <= smallerDistance)
+            {
+                closest = i * (1/interval);
+                smallerDistance = d;
+            }
+        }
+        return new Point(closest, smallerDistance); // x = t, y = dis
     }
 
     @Deprecated
@@ -211,43 +242,8 @@ public class BelzierCurve
         return resultantVector;
     }
 
-    /*public double findClosestT(Point point) {
-        ArrayList<Point> curve = returnCurve();
 
-        double smallestDistance = Double.POSITIVE_INFINITY;
-        double t = -1;
-        for(int i = (int) interval; i >= 0 ; i--)
-        {
-            double d = curve.get(i).subtract(point).getMagSqr();
-            if (d <= smallestDistance)
-            {
-                smallestDistance = d;
-                t += i * (1 / interval);
-            }
-        }
-
-        return t;
-    }*/
-
-    /*public double returnClosestTOnCurve(Point point)
-    {
-        ArrayList<Point> curve = returnCurve();
-        double closest = 0;
-        double i = 1;
-        double smallerDistance = Double.POSITIVE_INFINITY;
-        for(Point p: curve)
-        {
-            double d = Math.hypot(p.x - point.x, p.y - point.y) * Math.hypot(p.x - point.x, p.y - point.y);
-            if (d <= smallerDistance)
-            {
-                closest = (1/interval) * i;
-                smallerDistance = d;
-            }
-            i++;
-        }
-        return closest;
-    }*/
-    public double returnTheFuckingTOnCurve(Point point)
+    public double returnClosesT(Point point)
     {
         double closest = 0;
         double smallerDistance = Double.POSITIVE_INFINITY;

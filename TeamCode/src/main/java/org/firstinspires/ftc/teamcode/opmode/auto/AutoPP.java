@@ -1,3 +1,4 @@
+/*
 package org.firstinspires.ftc.teamcode.opmode.auto;
 
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -43,16 +44,18 @@ public class AutoPP extends LinearOpMode
         path.add(new CurvePoint(0, 0, 1, 1, 3, Math.toRadians(30), Math.toRadians(30)));
         path.add(new CurvePoint(0, 55, 1, 1, 3, Math.toRadians(30), Math.toRadians(30)));
         //path.add(new CurvePoint(-30, 30, 1, 1, 3, Math.toRadians(30), Math.toRadians(30)));
-        drive.setTargetPath(path);
+        //drive.setTargetPath(path);
         //drive.setTargetPose(new Pose(10, 0, Math.toRadians(0)));
         waitForStart();
         while (!isStopRequested() && opModeIsActive())
         {
             packet = new TelemetryPacket();
+*/
 /*
             telemetry.addLine();
             telemetry.addData("Target Heading", drive.getTargetPose().getHeading());
-            telemetry.addData("Heading", drive.getLocalizer().getHeading());*/
+            telemetry.addData("Heading", drive.getLocalizer().getHeading());*//*
+
             telemetry.addLine();
             telemetry.addData("TargetPose", drive.getTargetPose());
             telemetry.addData("PoseEstimate", drive.getLocalizer().getPoseEstimate());
@@ -68,13 +71,15 @@ public class AutoPP extends LinearOpMode
             telemetry.addData("PowerVector Z", drive.powerVector.getZ());
             telemetry.addData("Gliding vector", drive.getLocalizer().getGlideDelta());
 
-  /*          telemetry.addLine();
+  */
+/*          telemetry.addLine();
             telemetry.addData("Voltage", drive.getVoltage());
             telemetry.addData("FL", drive.FLPower);
             telemetry.addData("FR", drive.FRPower);
             telemetry.addData("BL", drive.BLPower);
             telemetry.addData("BR", drive.BRPower);
-*/
+*//*
+
 
             packet.fieldOverlay().setFill("red").strokeRect(drive.getLocalizer().getPoseEstimate().getX() - 4,
                     drive.getLocalizer().getPoseEstimate().getY() -4, 8, 8); // robot
@@ -105,3 +110,4 @@ public class AutoPP extends LinearOpMode
     }
 }
 
+*/
