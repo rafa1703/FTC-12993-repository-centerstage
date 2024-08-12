@@ -13,7 +13,7 @@ public class GVFLogic
     public boolean followTangentially = false;
     public boolean reverse = false;
     @NonNull
-    public Vector calculate(BelzierCurve curve, Pose pose)
+    public Vector calculate(BelzierCurve curve, Pose pose, boolean slowDown)
     {
         // correction is like the go back to the fucking line and then path shit is follow the bitch spline
         Point robot = pose.toPoint();
@@ -55,7 +55,7 @@ public class GVFLogic
 
         Vector movementVector = new Vector(Math.cos(direction), Math.sin(direction));
         double speed = 1;
-        if (robotToEnd.getMagnitude() < 34) // this value
+        if (robotToEnd.getMagnitude() < 34 && slowDown) // this value
         {
             // like a weighted average for the speed
             speed = interpolation(0.15, speed, robotToEnd.getMagnitude() / 34);

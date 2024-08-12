@@ -45,13 +45,16 @@ public class Trajectory
             Point distAndT = segment.getClosestDistanceAndT(pose.toPoint());
             if (distAndT.y < closestDistance)
             {
-                closestDistance = distAndT.x;
+                closestDistance = distAndT.y;
                 t = distAndT.x + segments.indexOf(segment);
             }
         }
         //u = t;
         BelzierCurve curve = segments.get((int) t).returnCurve();
-        Vector powerVector = gvfLogic.calculate(curve, pose);
+        boolean slowdown = Math.floor(t) == segments.size() -1 ? true : false;
+
+
+        Vector powerVector = gvfLogic.calculate(curve, pose, slowdown);
 
         return powerVector;
     }
@@ -65,15 +68,22 @@ public class Trajectory
         for (TrajectorySegment segment : segments)
         {
             Point distAndT = segment.getClosestDistanceAndT(pose.toPoint());
-            if (distAndT.x <= closestDistance)
+            if (distAndT.y <= closestDistance)
             {
-                closestDistance = distAndT.x;
-                t = distAndT.y + segments.indexOf(segment);
+                closestDistance = distAndT.y;
+                t = distAndT.x + segments.indexOf(segment);
             }
         }
         //u = t;
-        BelzierCurve curve = segments.get((int) Math.floor(t)).returnCurve();
-        Vector powerVector = gvfLogic.calculate(curve, pose);
+        BelzierCurve curve;
+        boolean slowdown = Math.floor(t) == segments.size() -1 ? true : false; // this just say if following last curve
+        if (t == segments.size())
+        {
+             curve = segments.get(segments.size() -1).returnCurve();
+        }
+        else curve = segments.get((int) t).returnCurve();
+
+        Vector powerVector = gvfLogic.calculate(curve, pose, slowdown);
 
         return powerVector;
     }

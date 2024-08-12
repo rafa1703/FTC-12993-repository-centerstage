@@ -64,7 +64,7 @@ public class gvfTest extends LinearOpMode
         {
             intakeSubsystem.intakePixelHolderServoState(IntakeSubsystem.IntakePixelHolderServoState.HOLDING);
             Pose pose = drive.getLocalizer().getPredictedPoseEstimate();
-            Vector power = gvfLogic.calculate(curve, pose); // might want to pass as Pose
+            Vector power = gvfLogic.calculate(curve, pose, true); // might want to pass as Pose
             drive.setTargetVector(power);
 
             drive.update();

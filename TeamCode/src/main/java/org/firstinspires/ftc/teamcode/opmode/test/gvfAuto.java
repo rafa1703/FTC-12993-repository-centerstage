@@ -49,20 +49,30 @@ public class gvfAuto extends LinearOpMode
         drive = new MecanumDrive(
                 driveBase.FL, driveBase.FR, driveBase.BL, driveBase.BR,
                 MecanumDrive.RunMode.Vector, voltageSupplier);
-        drive.setLocalizer(new Localizer(hardwareMap, new Pose(-48, 0, Math.toRadians(0)), this));
+        drive.setLocalizer(new Localizer(hardwareMap, new Pose(-60, -24, Math.toRadians(180)), this));
 
-        BelzierCurve curve = new BelzierCurve(new Point[]{
-                new Point(-48, 0),
-                new Point(0, 0),
+        BelzierCurve curve0 = new BelzierCurve(new Point[]{
+                new Point(-36, -64),
+                new Point(-60, -24),
         });
         BelzierCurve curve1 = new BelzierCurve(new Point[]{
+                new Point(-60, -24),
+                new Point(-50, 0),
+                new Point(-36, 0)
+        });
+
+        BelzierCurve curve2 = new BelzierCurve(new Point[]{
+                new Point(-36, 0),
+                new Point(0, 0),
+        });
+        BelzierCurve curve3 = new BelzierCurve(new Point[]{
                 new Point(0, 0),
                 new Point(24, 0),
                 new Point(24, -24)
         });
-        Trajectory trajectory = new TrajectoryBuilder(
-                new BelzierCurveTrajectorySegment(curve))
-                .addSegment(new BelzierCurveTrajectorySegment(curve1))
+        Trajectory trajectory = new TrajectoryBuilder(new BelzierCurveTrajectorySegment(curve1))
+                .addSegment(new BelzierCurveTrajectorySegment(curve2))
+                .addSegment(new BelzierCurveTrajectorySegment(curve3))
                 .build();
 
         //drive.setSpeed(1);
@@ -72,7 +82,8 @@ public class gvfAuto extends LinearOpMode
         while(opModeIsActive())
         {
             intakeSubsystem.intakePixelHolderServoState(IntakeSubsystem.IntakePixelHolderServoState.HOLDING);
-            drive.followTrajectory(trajectory);
+            //drive.followTrajectory(trajectory);
+            drive.followTrajectoryTangentially(trajectory, true);
             drive.update();
 
 
