@@ -46,8 +46,8 @@ public class MecanumDrive
         GVF
     }
 
-    public static PIDController TRANSLATIONAL_PID = new PIDController(0.044, 0.00000, 0);
-    public static PIDController HEADING_PID = new PIDController(0.37, 0.008, 0.00034);
+    public static PIDController TRANSLATIONAL_PID = new PIDController(0.27, 0.00000, 0.00034);
+    public static PIDController HEADING_PID = new PIDController(0.5, 0.008, 0.00034);
     private DcMotor FL, FR, BL, BR; // TODO: hardware class > then this
     private RunMode runMode;
     private Localizer localizer;
@@ -56,7 +56,7 @@ public class MecanumDrive
     public Vector targetVector = new Vector();
 
     private static double ks = 0.03;
-    public double lateralMultiplier = 1; //= 1.1194029851;
+    public double lateralMultiplier = 1.08; //= 1.1194029851;
     public static double headingMultiplier = 1;
     private double overallMultiplier = 1;
 
@@ -208,7 +208,7 @@ public class MecanumDrive
         updateMotors();
     }
 
-    //TODO: this should absolutely be cached and not done like this
+    // TODO: this should absolutely be cached and not done like this
     public double getVoltage()
     {
         return voltageSupplier.get();
@@ -285,15 +285,27 @@ public class MecanumDrive
         overallMultiplier = speed;
     }
 
-    public void followTrajectory(Trajectory trajectory)
+    public void followTrajectory(@NonNull Trajectory trajectory)
     {
+        runMode = RunMode.Vector;
         Pose currentPose = localizer.getPredictedPoseEstimate();
         setTargetVector(trajectory.getPowerVector(currentPose));
+        if (trajectory.usePid())
+        {
+            runMode = RunMode.P2P;
+            setTargetPose(trajectory.getFinalPose());
+        }
     }
-    public void followTrajectoryTangentially(Trajectory trajectory, boolean reverse)
+    public void followTrajectoryTangentially(@NonNull Trajectory trajectory, boolean reverse)
     {
+        runMode = RunMode.Vector;
         Pose currentPose = localizer.getPredictedPoseEstimate();
         setTargetVector(trajectory.getTangentPowerVector(currentPose, reverse));
+        if (trajectory.usePid())
+        {
+            runMode = RunMode.P2P;
+            setTargetPose(trajectory.getFinalPose());
+        }
     }
 
 

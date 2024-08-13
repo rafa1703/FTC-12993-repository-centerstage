@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Vector;
-import org.firstinspires.ftc.teamcode.system.paths.splines.BelzierCurve;
+import org.firstinspires.ftc.teamcode.system.paths.splines.BezierCurve;
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ public class CurvesTest extends LinearOpMode
 {
     TelemetryPacket packet;
     FtcDashboard dashboard = FtcDashboard.getInstance();
-    BelzierCurve curve = new BelzierCurve(
+    BezierCurve curve = new BezierCurve(
             new Point[]{
                     new Point(0, 0),
                     new Point(-10, 20),

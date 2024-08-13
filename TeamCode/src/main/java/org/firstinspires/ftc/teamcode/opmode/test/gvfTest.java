@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.system.paths.P2P.Localizer;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.MecanumDrive;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Pose;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Vector;
-import org.firstinspires.ftc.teamcode.system.paths.splines.BelzierCurve;
+import org.firstinspires.ftc.teamcode.system.paths.splines.BezierCurve;
 import org.firstinspires.ftc.teamcode.system.paths.splines.GVFLogic;
 import org.opencv.core.Point;
 
@@ -47,7 +47,7 @@ public class gvfTest extends LinearOpMode
                 MecanumDrive.RunMode.Vector, voltageSupplier);
         drive.setLocalizer(new Localizer(hardwareMap, new Pose(-48, 0, Math.toRadians(180)), this));
 
-        BelzierCurve curve = new BelzierCurve(new Point[]{
+        BezierCurve curve = new BezierCurve(new Point[]{
                 new Point(-48, 0),
                 new Point(0, 0),
                 new Point(24, 0),

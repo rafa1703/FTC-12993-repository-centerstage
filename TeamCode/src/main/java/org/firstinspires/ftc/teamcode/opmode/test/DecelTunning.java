@@ -66,7 +66,7 @@ public class DecelTunning extends LinearOpMode {
         drive = new MecanumDrive(
                 driveBase.FL, driveBase.FR, driveBase.BL, driveBase.BR,
                 MecanumDrive.RunMode.Vector, voltageSupplier);
-        drive.setLocalizer(new Localizer(hardwareMap, new Pose(0, 0, Math.toRadians(90)), this));
+        drive.setLocalizer(new Localizer(hardwareMap, new Pose(0, 0, Math.toRadians(0)), this));
 
         waitForStart();
 
@@ -83,12 +83,12 @@ public class DecelTunning extends LinearOpMode {
             switch (step){
                 case 0:
                     if(timer.seconds() <= accelerationTime) {
-                        drive.setTargetVector(new Vector(1,0,0));
+                        drive.setTargetVector(new Vector(1,0));
                     }
                     else{
                         step++;
                         timer.reset();
-                        velocityAtStop = drive.getLocalizer().getVelocity().getY();
+                        velocityAtStop = drive.getLocalizer().getVelocity().getX();
                         drive.setTargetVector(new Vector());
                     }
                     break;

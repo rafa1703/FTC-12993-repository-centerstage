@@ -13,10 +13,8 @@ import org.firstinspires.ftc.teamcode.system.hardware.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Localizer;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.MecanumDrive;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Pose;
-import org.firstinspires.ftc.teamcode.system.paths.P2P.Vector;
-import org.firstinspires.ftc.teamcode.system.paths.splines.BelzierCurve;
-import org.firstinspires.ftc.teamcode.system.paths.splines.BelzierCurveTrajectorySegment;
-import org.firstinspires.ftc.teamcode.system.paths.splines.GVFLogic;
+import org.firstinspires.ftc.teamcode.system.paths.splines.BezierCurve;
+import org.firstinspires.ftc.teamcode.system.paths.splines.BezierCurveTrajectorySegment;
 import org.firstinspires.ftc.teamcode.system.paths.splines.Trajectory;
 import org.firstinspires.ftc.teamcode.system.paths.splines.TrajectoryBuilder;
 import org.opencv.core.Point;
@@ -49,31 +47,32 @@ public class gvfAuto extends LinearOpMode
         drive = new MecanumDrive(
                 driveBase.FL, driveBase.FR, driveBase.BL, driveBase.BR,
                 MecanumDrive.RunMode.Vector, voltageSupplier);
-        drive.setLocalizer(new Localizer(hardwareMap, new Pose(-60, -24, Math.toRadians(180)), this));
+        drive.setLocalizer(new Localizer(hardwareMap, new Pose(-36, 0, Math.toRadians(180)), this));
 
-        BelzierCurve curve0 = new BelzierCurve(new Point[]{
+        BezierCurve curve0 = new BezierCurve(new Point[]{
                 new Point(-36, -64),
                 new Point(-60, -24),
         });
-        BelzierCurve curve1 = new BelzierCurve(new Point[]{
+        BezierCurve curve1 = new BezierCurve(new Point[]{
                 new Point(-60, -24),
                 new Point(-50, 0),
                 new Point(-36, 0)
         });
 
-        BelzierCurve curve2 = new BelzierCurve(new Point[]{
+        BezierCurve curve2 = new BezierCurve(new Point[]{
                 new Point(-36, 0),
                 new Point(0, 0),
         });
-        BelzierCurve curve3 = new BelzierCurve(new Point[]{
+        BezierCurve curve3 = new BezierCurve(new Point[]{
                 new Point(0, 0),
                 new Point(24, 0),
                 new Point(24, -24)
         });
-        Trajectory trajectory = new TrajectoryBuilder(new BelzierCurveTrajectorySegment(curve1))
-                .addSegment(new BelzierCurveTrajectorySegment(curve2))
-                .addSegment(new BelzierCurveTrajectorySegment(curve3))
-                .build();
+        Trajectory trajectory = new TrajectoryBuilder(new BezierCurveTrajectorySegment(curve2))
+                //.addSegment(new BezierCurveTrajectorySegment(curve2))
+                .addSegment(new BezierCurveTrajectorySegment(curve3))
+                .addFinalPose(new Pose(24, -24, Math.toRadians(180)))
+                .end();
 
         //drive.setSpeed(1);
         ArrayList<Point> fullCurve = trajectory.getFullCurve();
@@ -82,10 +81,11 @@ public class gvfAuto extends LinearOpMode
         while(opModeIsActive())
         {
             intakeSubsystem.intakePixelHolderServoState(IntakeSubsystem.IntakePixelHolderServoState.HOLDING);
-            //drive.followTrajectory(trajectory);
-            drive.followTrajectoryTangentially(trajectory, true);
+            drive.followTrajectory(trajectory);
+            //drive.followTrajectoryTangentially(trajectory, true);
             drive.update();
 
+/*
 
             packet = new TelemetryPacket();
             for (Point point: fullCurve)
@@ -95,13 +95,19 @@ public class gvfAuto extends LinearOpMode
 
             }
             packet.fieldOverlay().setFill("Red").fillCircle(drive.getLocalizer().getPoseEstimate().getX(),drive.getLocalizer().getPoseEstimate().getY() , 2);
+*/
+
+            telemetry.addData("Pose predinct", drive.getLocalizer().getPredictedPoseEstimate());
+            telemetry.addData("Pose", drive.getLocalizer().getPoseEstimate());
+            telemetry.update();
+
             //packet.fieldOverlay().setFill("orange").fillRect(pose.getX(), pose.getY(), 1, 4).;
             /*telemetry.addData("Heading", Math.toDegrees(drive.getLocalizer().getHeading()));
             telemetry.addData("HeadingScale", gvfLogic.headingS );
             telemetry.addData("Z vector", Math.toDegrees(gvfLogic.zVector));
             telemetry.addData("looptime");
             telemetry.update();*/
-            dashboard.sendTelemetryPacket(packet);
+            //dashboard.sendTelemetryPacket(packet);
         }
     }
 }

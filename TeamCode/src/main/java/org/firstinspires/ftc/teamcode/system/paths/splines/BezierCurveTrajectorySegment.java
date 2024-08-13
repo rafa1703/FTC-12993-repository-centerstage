@@ -3,10 +3,10 @@ package org.firstinspires.ftc.teamcode.system.paths.splines;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Vector;
 import org.opencv.core.Point;
 
-public class BelzierCurveTrajectorySegment extends TrajectorySegment
+public class BezierCurveTrajectorySegment extends TrajectorySegment
 {
-    BelzierCurve curve;
-    public BelzierCurveTrajectorySegment(BelzierCurve curve)
+    BezierCurve curve;
+    public BezierCurveTrajectorySegment(BezierCurve curve)
     {
         this.curve = curve;
     }
@@ -49,7 +49,7 @@ public class BelzierCurveTrajectorySegment extends TrajectorySegment
     }
 
     @Override
-    public BelzierCurve returnCurve()
+    public BezierCurve returnCurve()
     {
         return curve;
     }

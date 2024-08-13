@@ -6,14 +6,14 @@ import org.opencv.core.Point;
 
 import java.util.ArrayList;
 
-public class BelzierCurve
+public class BezierCurve
 {
     private final double interval = 100;
     private final int n;
     private final Point[] points;
     private final double MAX_DISTANCE = 12; // in
 
-    public BelzierCurve(Point[] points)
+    public BezierCurve(Point[] points)
     {
         n = points.length - 1;
         this.points = points;

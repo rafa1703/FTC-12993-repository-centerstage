@@ -12,8 +12,9 @@ public class GVFLogic
 {
     public boolean followTangentially = false;
     public boolean reverse = false;
+    public boolean usePID = false;
     @NonNull
-    public Vector calculate(BelzierCurve curve, Pose pose, boolean slowDown)
+    public Vector calculate(BezierCurve curve, Pose pose, boolean slowDown)
     {
         // correction is like the go back to the fucking line and then path shit is follow the bitch spline
         Point robot = pose.toPoint();
@@ -76,6 +77,8 @@ public class GVFLogic
                 movementVector = new Vector(movementVector.getX(), movementVector.getY(), headingDiff);
 
         }
+        // tbh idk if the dist check is necessary here
+        usePID = t == 1;
         return movementVector;
 
     }
@@ -100,7 +103,7 @@ public class GVFLogic
     }
 
 
-    private double binomalSearch(BelzierCurve curve, Point point, double start, double end)
+    private double binomalSearch(BezierCurve curve, Point point, double start, double end)
     {
         Vector robot = new Vector(point);
         double middle = (start + end) / 2;
@@ -143,5 +146,10 @@ public class GVFLogic
     public boolean isReverse()
     {
         return reverse;
+    }
+
+    public boolean usePID()
+    {
+        return usePID;
     }
 }

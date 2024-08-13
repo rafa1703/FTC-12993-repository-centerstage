@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.system.paths.splines;
 
+import androidx.annotation.NonNull;
+
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Pose;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Vector;
 import org.opencv.core.Point;
@@ -10,11 +12,12 @@ public class Trajectory
 {
     private ArrayList<TrajectorySegment> segments;
     private int numberOfSegments;
-    private double u = 0;
-    private double lastTFollowed;
     GVFLogic gvfLogic = new GVFLogic();
-    public boolean pid;
     ArrayList<Point> fullCurve;
+    private double threshold = 0.5; // this is the default
+    private boolean isFinished = false;
+    private boolean usePID = false;
+    private Pose finalPose;
 
     public Trajectory(TrajectorySegment segment)
     {
@@ -23,6 +26,13 @@ public class Trajectory
     public Trajectory(ArrayList<TrajectorySegment> segments)
     {
         this.segments = segments;
+
+        init();
+    }
+    public Trajectory(ArrayList<TrajectorySegment> segments,@NonNull Pose finalPose)
+    {
+        this.segments = segments;
+        this.finalPose = finalPose;
         init();
     }
 
@@ -40,21 +50,29 @@ public class Trajectory
 
         double closestDistance = Double.POSITIVE_INFINITY;
         double t = 0;
+        int u = 0;
         for (TrajectorySegment segment : segments)
         {
             Point distAndT = segment.getClosestDistanceAndT(pose.toPoint());
             if (distAndT.y < closestDistance)
             {
                 closestDistance = distAndT.y;
-                t = distAndT.x + segments.indexOf(segment);
+                t = distAndT.x;
+                u = segments.indexOf(segment);
             }
         }
-        //u = t;
-        BelzierCurve curve = segments.get((int) t).returnCurve();
-        boolean slowdown = Math.floor(t) == segments.size() -1 ? true : false;
+
+        BezierCurve curve = segments.get(u).returnCurve();
+        boolean lastCurve = u == numberOfSegments;
 
 
-        Vector powerVector = gvfLogic.calculate(curve, pose, slowdown);
+        Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve);
+        // if we less then the threshold we can say we are finished
+        if (segments.get(numberOfSegments).getEndPoint().subtract(pose.toPoint()).getMagnitude() < threshold)
+        {
+            isFinished = true;
+        }
+        usePID = gvfLogic.usePID() && lastCurve;
 
         return powerVector;
     }
@@ -65,26 +83,34 @@ public class Trajectory
 
         double closestDistance = Double.POSITIVE_INFINITY;
         double t = 0;
+        int u = 0;
         for (TrajectorySegment segment : segments)
         {
             Point distAndT = segment.getClosestDistanceAndT(pose.toPoint());
             if (distAndT.y <= closestDistance)
             {
                 closestDistance = distAndT.y;
-                t = distAndT.x + segments.indexOf(segment);
+                t = distAndT.x;
+                u = segments.indexOf(segment);
             }
         }
-        //u = t;
-        BelzierCurve curve;
-        boolean slowdown = Math.floor(t) == segments.size() -1 ? true : false; // this just say if following last curve
-        if (t == segments.size())
+
+        BezierCurve curve;
+        boolean lastCurve = u == numberOfSegments;
+        /*if (u == segments.size())
         {
              curve = segments.get(segments.size() -1).returnCurve();
         }
-        else curve = segments.get((int) t).returnCurve();
+        else*/
+        curve = segments.get(u).returnCurve();
 
-        Vector powerVector = gvfLogic.calculate(curve, pose, slowdown);
-
+        Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve); //TODO i can probably already pass the t value here
+        // if we less then the threshold we can say we are finished
+        if (segments.get(numberOfSegments).getEndPoint().subtract(pose.toPoint()).getMagnitude() < threshold)
+        {
+            isFinished = true;
+        }
+        usePID = gvfLogic.usePID() && lastCurve;
         return powerVector;
     }
     private ArrayList<Point> returnFullCurve()
@@ -98,10 +124,28 @@ public class Trajectory
         return wholeCurve;
     }
 
+    public boolean isFinished()
+    {
+        return isFinished;
+    }
+
     public ArrayList<Point> getFullCurve()
     {
         return fullCurve;
     }
 
+    public void setThreshold(double threshold)
+    {
+        this.threshold = threshold;
+    }
 
+    public boolean usePid()
+    {
+        return usePID;
+    }
+
+    public Pose getFinalPose()
+    {
+        return finalPose;
+    }
 }
