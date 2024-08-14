@@ -70,7 +70,7 @@ public class Localizer
     private final LowPassFilter xVelocityFilter = new LowPassFilter(filterParameter, 0),
             yVelocityFilter = new LowPassFilter(filterParameter, 0);
 
-    public static double xDeceleration = 43, yDeceleration = 73;  //= 55.1, yDeceleration = 2.97;//29.7; // 100 , 150,  50.87
+    public static double xDeceleration = 100, yDeceleration = 150;  //= 43, 73
 
     public Vector getVelocity(){
         return velocity;

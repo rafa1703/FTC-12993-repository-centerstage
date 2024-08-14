@@ -65,16 +65,16 @@ public class GVFLogic
 
         if (followTangentially) // reverse only affects if we following tangentially so it can be nested here
         {
-            if(t == 1)
+            if(t == 1 && slowDown) // we only slowdown on the last curve
             {
-                derivative = curve.getTangentialVector(0.99); // this is because at 1 the derivative is NaN
+                derivative = curve.getTangentialVector(1 - (1/ curve.getInterval())); // this is because at 1 the derivative is NaN
             }
-                double angle = derivative.getAngle();
-                if (reverse) angle += Math.toRadians(180);
-                double headingScale = Math.abs(Math.min(normalizeRadians(angle - pose.getHeading()) / Math.toRadians(70), 1)); // rn i think 70 is the best angle to consider max thing
-                double headingDiff = headingInterpolation(pose.getHeading(), angle, headingScale) - pose.getHeading();  //Math.min(normalizeRadians(derivative.getAngle() - pose.getHeading()) / Math.toRadians(30), 1); // Who the fuck knows if this is gonna work
-                // we want to remove the current heading because interpolation at t = 0 returns the current heading
-                movementVector = new Vector(movementVector.getX(), movementVector.getY(), headingDiff);
+            double angle = derivative.getAngle();
+            if (reverse) angle += Math.toRadians(180);
+            double headingScale = Math.abs(Math.min(normalizeRadians(angle - pose.getHeading()) / Math.toRadians(70), 1)); // rn i think 70 is the best angle to consider max thing
+            double headingDiff = headingInterpolation(pose.getHeading(), angle, headingScale) - pose.getHeading();  //Math.min(normalizeRadians(derivative.getAngle() - pose.getHeading()) / Math.toRadians(30), 1); // Who the fuck knows if this is gonna work
+            // we want to remove the current heading because interpolation at t = 0 returns the current heading
+            movementVector = new Vector(movementVector.getX(), movementVector.getY(), headingDiff);
 
         }
         // tbh idk if the dist check is necessary here

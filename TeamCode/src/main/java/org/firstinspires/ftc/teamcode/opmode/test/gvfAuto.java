@@ -70,13 +70,13 @@ public class gvfAuto extends LinearOpMode
                 new Point(24, -24)
         });
         Trajectory trajectory = new TrajectoryBuilder(new BezierCurveTrajectorySegment(curve2))
-                //.addSegment(new BezierCurveTrajectorySegment(curve2))
                 .addSegment(new BezierCurveTrajectorySegment(curve3))
-                .addSpatialMarker(new Pose(24, -24, Math.toRadians(180)), () ->
-                {
-                    marker = true;
-                })
-                .addFinalPose(new Pose(24, -24, Math.toRadians(180)))
+                //.addSegment(new BezierCurveTrajectorySegment(curve3))
+//                .addSpatialMarker(new Pose(24, -24), () ->
+//                {
+//                    marker = true;
+//                })
+                .addFinalPose(new Pose(24, -24, Math.toRadians(90)))
                 .build();
 
         //drive.setSpeed(1);
@@ -86,11 +86,10 @@ public class gvfAuto extends LinearOpMode
         while(opModeIsActive())
         {
             intakeSubsystem.intakePixelHolderServoState(IntakeSubsystem.IntakePixelHolderServoState.HOLDING);
-            drive.followTrajectory(trajectory);
-            //drive.followTrajectoryTangentially(trajectory, true);
+            //drive.followTrajectory(trajectory);
+            drive.followTrajectoryTangentially(trajectory, true);
             drive.update();
 
-/*
 
             packet = new TelemetryPacket();
             for (Point point: fullCurve)
@@ -99,13 +98,13 @@ public class gvfAuto extends LinearOpMode
                 packet.fieldOverlay().setFill("black").fillCircle(point.x, point.y, 1);
 
             }
+            packet.fieldOverlay().setFill("Blue").fillCircle(drive.getLocalizer().getPredictedPoseEstimate().getX(),drive.getLocalizer().getPredictedPoseEstimate().getY() , 2);
             packet.fieldOverlay().setFill("Red").fillCircle(drive.getLocalizer().getPoseEstimate().getX(),drive.getLocalizer().getPoseEstimate().getY() , 2);
-*/
 
-            telemetry.addData("Marker", marker);
+           /* telemetry.addData("Marker", marker);
             telemetry.addData("Pose predinct", drive.getLocalizer().getPredictedPoseEstimate());
             telemetry.addData("Pose", drive.getLocalizer().getPoseEstimate());
-            telemetry.update();
+            telemetry.update();*/
 
             //packet.fieldOverlay().setFill("orange").fillRect(pose.getX(), pose.getY(), 1, 4).;
             /*telemetry.addData("Heading", Math.toDegrees(drive.getLocalizer().getHeading()));
@@ -113,7 +112,7 @@ public class gvfAuto extends LinearOpMode
             telemetry.addData("Z vector", Math.toDegrees(gvfLogic.zVector));
             telemetry.addData("looptime");
             telemetry.update();*/
-            //dashboard.sendTelemetryPacket(packet);
+            dashboard.sendTelemetryPacket(packet);
         }
     }
 }
