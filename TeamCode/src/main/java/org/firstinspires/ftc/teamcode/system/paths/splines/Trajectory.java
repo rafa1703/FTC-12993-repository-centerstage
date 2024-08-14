@@ -18,6 +18,9 @@ public class Trajectory
     private boolean isFinished = false;
     private boolean usePID = false;
     private Pose finalPose;
+    private final double SPATIAL_MARKER_THRESHOLD = 0.5; //in, this might be too big idk
+
+    private ArrayList<SpatialMarker> spatialMarkers;
 
     public Trajectory(TrajectorySegment segment)
     {
@@ -33,6 +36,13 @@ public class Trajectory
     {
         this.segments = segments;
         this.finalPose = finalPose;
+        init();
+    }
+    public Trajectory(ArrayList<TrajectorySegment> segments,@NonNull Pose finalPose, ArrayList<SpatialMarker> spatialMarkers)
+    {
+        this.segments = segments;
+        this.finalPose = finalPose;
+        this.spatialMarkers = spatialMarkers;
         init();
     }
 
@@ -72,7 +82,19 @@ public class Trajectory
         {
             isFinished = true;
         }
-        usePID = gvfLogic.usePID() && lastCurve;
+
+        if(!spatialMarkers.isEmpty()) // hope this doesn't break shit
+        {
+            for(SpatialMarker marker : spatialMarkers)
+            {
+                if(pose.getDistance(marker.spatialPoint) < SPATIAL_MARKER_THRESHOLD)
+                {
+                    marker.callback.onMarker();
+                    spatialMarkers.remove(marker);
+                }
+            }
+        }
+        usePID = gvfLogic.usePID() && lastCurve && finalPose != null;
 
         return powerVector;
     }
@@ -110,7 +132,18 @@ public class Trajectory
         {
             isFinished = true;
         }
-        usePID = gvfLogic.usePID() && lastCurve;
+        if(!spatialMarkers.isEmpty())
+        {
+            for(SpatialMarker marker : spatialMarkers)
+            {
+                if(pose.getDistance(marker.spatialPoint) < SPATIAL_MARKER_THRESHOLD)
+                {
+                    marker.callback.onMarker();
+                    spatialMarkers.remove(marker);
+                }
+            }
+        }
+        usePID = gvfLogic.usePID() && lastCurve && finalPose != null;
         return powerVector;
     }
     private ArrayList<Point> returnFullCurve()

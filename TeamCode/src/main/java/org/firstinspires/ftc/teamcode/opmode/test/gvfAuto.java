@@ -28,6 +28,7 @@ public class gvfAuto extends LinearOpMode
     MecanumDrive drive;
     TelemetryPacket packet;
     FtcDashboard dashboard = FtcDashboard.getInstance();
+    boolean marker = false;
     @Override
     public void runOpMode() throws InterruptedException
     {
@@ -71,8 +72,12 @@ public class gvfAuto extends LinearOpMode
         Trajectory trajectory = new TrajectoryBuilder(new BezierCurveTrajectorySegment(curve2))
                 //.addSegment(new BezierCurveTrajectorySegment(curve2))
                 .addSegment(new BezierCurveTrajectorySegment(curve3))
+                .addSpatialMarker(new Pose(24, -24, Math.toRadians(180)), () ->
+                {
+                    marker = true;
+                })
                 .addFinalPose(new Pose(24, -24, Math.toRadians(180)))
-                .end();
+                .build();
 
         //drive.setSpeed(1);
         ArrayList<Point> fullCurve = trajectory.getFullCurve();
@@ -97,6 +102,7 @@ public class gvfAuto extends LinearOpMode
             packet.fieldOverlay().setFill("Red").fillCircle(drive.getLocalizer().getPoseEstimate().getX(),drive.getLocalizer().getPoseEstimate().getY() , 2);
 */
 
+            telemetry.addData("Marker", marker);
             telemetry.addData("Pose predinct", drive.getLocalizer().getPredictedPoseEstimate());
             telemetry.addData("Pose", drive.getLocalizer().getPoseEstimate());
             telemetry.update();
