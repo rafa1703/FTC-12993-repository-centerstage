@@ -307,6 +307,18 @@ public class MecanumDrive
             setTargetPose(trajectory.getFinalPose());
         }
     }
+    public void followTrajectorySplineHeading(@NonNull Trajectory trajectory)
+    {
+        runMode = RunMode.Vector;
+        Pose currentPose = localizer.getPredictedPoseEstimate();
+        setTargetVector(trajectory.getPowerVectorSplineHeading(currentPose));
+        if (false)//(trajectory.usePid())
+        {
+            runMode = RunMode.P2P;
+            setTargetPose(trajectory.getFinalPose());
+        }
+    }
+
 
 
 

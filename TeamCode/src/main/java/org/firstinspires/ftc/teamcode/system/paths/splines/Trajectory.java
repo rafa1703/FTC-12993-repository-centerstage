@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.system.paths.splines;
 
+import static org.firstinspires.ftc.teamcode.system.hardware.Globals.normalizeRadians;
+
 import androidx.annotation.NonNull;
 
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Pose;
@@ -17,7 +19,7 @@ public class Trajectory
     private double threshold = 0.5; // this is the default
     private boolean isFinished = false;
     private boolean usePID = false;
-    private Pose finalPose;
+    private Pose startPose, finalPose;
     private final double SPATIAL_MARKER_THRESHOLD = 0.5; //in, this might be too big idk
 
     private ArrayList<SpatialMarker> spatialMarkers;
@@ -25,6 +27,7 @@ public class Trajectory
     public Trajectory(TrajectorySegment segment)
     {
         segments.add(segment);
+        init();
     }
     public Trajectory(ArrayList<TrajectorySegment> segments)
     {
@@ -32,15 +35,11 @@ public class Trajectory
 
         init();
     }
-    public Trajectory(ArrayList<TrajectorySegment> segments,@NonNull Pose finalPose)
+
+    public Trajectory(ArrayList<TrajectorySegment> segments,@NonNull Pose startPose, @NonNull Pose finalPose, ArrayList<SpatialMarker> spatialMarkers)
     {
         this.segments = segments;
-        this.finalPose = finalPose;
-        init();
-    }
-    public Trajectory(ArrayList<TrajectorySegment> segments,@NonNull Pose finalPose, ArrayList<SpatialMarker> spatialMarkers)
-    {
-        this.segments = segments;
+        this.startPose = startPose;
         this.finalPose = finalPose;
         this.spatialMarkers = spatialMarkers;
         init();
@@ -57,6 +56,7 @@ public class Trajectory
     {
         gvfLogic.setReverse(false);
         gvfLogic.setFollowTangentially(false);
+        gvfLogic.setSplineHeading(false);
 
         double closestDistance = Double.POSITIVE_INFINITY;
         double t = 0;
@@ -76,7 +76,7 @@ public class Trajectory
         boolean lastCurve = u == numberOfSegments;
 
 
-        Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve);
+        Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve, segments.get(u).getMaxSpeed());
         // if we less then the threshold we can say we are finished
         if (segments.get(numberOfSegments).getEndPoint().subtract(pose.toPoint()).getMagnitude() < threshold)
         {
@@ -102,6 +102,7 @@ public class Trajectory
     {
         gvfLogic.setReverse(reverse);
         gvfLogic.setFollowTangentially(true);
+        gvfLogic.setSplineHeading(false);
 
         double closestDistance = Double.POSITIVE_INFINITY;
         double t = 0;
@@ -126,7 +127,7 @@ public class Trajectory
         else*/
         curve = segments.get(u).returnCurve();
 
-        Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve); //TODO i can probably already pass the t value here
+        Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve, segments.get(u).getMaxSpeed()); //TODO i can probably already pass the t value here
         // if we less then the threshold we can say we are finished
         if (segments.get(numberOfSegments).getEndPoint().subtract(pose.toPoint()).getMagnitude() < threshold)
         {
@@ -144,6 +145,60 @@ public class Trajectory
             }
         }
         usePID = gvfLogic.usePID() && lastCurve && finalPose != null;
+        return powerVector;
+    }
+    public Vector getPowerVectorSplineHeading(Pose pose) // this should work lol, idk fucking know tho
+    {
+        gvfLogic.setReverse(false);
+        gvfLogic.setFollowTangentially(false);
+        gvfLogic.setSplineHeading(true);
+
+        double closestDistance = Double.POSITIVE_INFINITY;
+        double t = 0;
+        int u = 0;
+        for (TrajectorySegment segment : segments)
+        {
+            Point distAndT = segment.getClosestDistanceAndT(pose.toPoint());
+            if (distAndT.y < closestDistance)
+            {
+                closestDistance = distAndT.y;
+                t = distAndT.x;
+                u = segments.indexOf(segment);
+            }
+        }
+
+        BezierCurve curve = segments.get(u).returnCurve();
+        boolean lastCurve = u == numberOfSegments;
+
+
+        Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve, segments.get(u).getMaxSpeed());
+        // we need to change the z component of the power vector, yes this being done here is dodgy as fuck but i don't care
+        double finalHeading = finalPose.getHeading();
+        double startHeading = startPose.getHeading();
+        double headingDiff = gvfLogic.headingInterpolation(startHeading, finalHeading, (u + t) / (numberOfSegments + 1)) - pose.getHeading(); // remove heading because we want the diff
+        //headingDiff = normalizeRadians(headingDiff - pose.getHeading());
+        powerVector = new Vector(powerVector.getX(), powerVector.getY(), headingDiff);
+
+
+        // if we less then the threshold we can say we are finished
+        if (segments.get(numberOfSegments).getEndPoint().subtract(pose.toPoint()).getMagnitude() < threshold)
+        {
+            isFinished = true;
+        }
+
+        if(!spatialMarkers.isEmpty()) // hope this doesn't break shit
+        {
+            for(SpatialMarker marker : spatialMarkers)
+            {
+                if(pose.getDistance(marker.spatialPoint) < SPATIAL_MARKER_THRESHOLD)
+                {
+                    marker.callback.onMarker();
+                    spatialMarkers.remove(marker);
+                }
+            }
+        }
+        usePID = gvfLogic.usePID() && lastCurve && finalPose != null;
+
         return powerVector;
     }
     private ArrayList<Point> returnFullCurve()

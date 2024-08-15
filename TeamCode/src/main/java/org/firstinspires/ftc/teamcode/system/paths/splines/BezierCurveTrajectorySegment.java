@@ -10,6 +10,12 @@ public class BezierCurveTrajectorySegment extends TrajectorySegment
     {
         this.curve = curve;
     }
+    public BezierCurveTrajectorySegment(BezierCurve curve, double maxSpeed)
+    {
+        this.curve = curve;
+        this.maxSpeed = maxSpeed;
+    }
+
 
 
     @Override
@@ -52,5 +58,17 @@ public class BezierCurveTrajectorySegment extends TrajectorySegment
     public BezierCurve returnCurve()
     {
         return curve;
+    }
+
+    @Override
+    public double getMaxSpeed()
+    {
+        return maxSpeed;
+    }
+
+    @Override
+    public void setMaxSpeed(double speed)
+    {
+        maxSpeed = speed;
     }
 }

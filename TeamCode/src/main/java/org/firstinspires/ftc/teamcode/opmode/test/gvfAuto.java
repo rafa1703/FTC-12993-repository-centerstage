@@ -29,6 +29,7 @@ public class gvfAuto extends LinearOpMode
     TelemetryPacket packet;
     FtcDashboard dashboard = FtcDashboard.getInstance();
     boolean marker = false;
+    ArrayList<Point> pathTraveled = new ArrayList<>();
     @Override
     public void runOpMode() throws InterruptedException
     {
@@ -37,7 +38,7 @@ public class gvfAuto extends LinearOpMode
         IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
         intakeSubsystem.initIntake(hardwareMap);
         intakeSubsystem.intakeHardwareSetup();
-        intakeSubsystem.intakePixelHolderServoState(IntakeSubsystem.IntakePixelHolderServoState.HOLDING);
+        intakeSubsystem.intakeClipServoState(IntakeSubsystem.IntakeClipServoState.HOLDING);
         driveBase.initDrivebase(hardwareMap);
         driveBase.drivebaseSetup();
         driveBase.setUpFloat();
@@ -69,14 +70,21 @@ public class gvfAuto extends LinearOpMode
                 new Point(24, 0),
                 new Point(24, -24)
         });
-        Trajectory trajectory = new TrajectoryBuilder(new BezierCurveTrajectorySegment(curve2))
-                .addSegment(new BezierCurveTrajectorySegment(curve3))
+        BezierCurve lineToSplineHeading = new BezierCurve(new Point[]{
+                new Point(0, 0),
+                new Point(15, 15),
+        });
+        Trajectory trajectory = new TrajectoryBuilder(drive.getLocalizer().getPoseEstimate())
+                .addSegment(new BezierCurveTrajectorySegment(curve2))
+                .addSegment(new BezierCurveTrajectorySegment(curve3, 0.7))
+                //.addSegment(new BezierCurveTrajectorySegment(curve2))
+                //.addSegment(new BezierCurveTrajectorySegment(curve3))
                 //.addSegment(new BezierCurveTrajectorySegment(curve3))
 //                .addSpatialMarker(new Pose(24, -24), () ->
 //                {
 //                    marker = true;
 //                })
-                .addFinalPose(new Pose(24, -24, Math.toRadians(90)))
+                .addFinalPose(new Pose(24, -24, Math.toRadians(180)))
                 .build();
 
         //drive.setSpeed(1);
@@ -85,9 +93,10 @@ public class gvfAuto extends LinearOpMode
 
         while(opModeIsActive())
         {
-            intakeSubsystem.intakePixelHolderServoState(IntakeSubsystem.IntakePixelHolderServoState.HOLDING);
+            intakeSubsystem.intakeClipServoState(IntakeSubsystem.IntakeClipServoState.HOLDING);
             //drive.followTrajectory(trajectory);
-            drive.followTrajectoryTangentially(trajectory, true);
+            //drive.followTrajectoryTangentially(trajectory, true);
+            drive.followTrajectory(trajectory);
             drive.update();
 
 
@@ -98,8 +107,17 @@ public class gvfAuto extends LinearOpMode
                 packet.fieldOverlay().setFill("black").fillCircle(point.x, point.y, 1);
 
             }
-            packet.fieldOverlay().setFill("Blue").fillCircle(drive.getLocalizer().getPredictedPoseEstimate().getX(),drive.getLocalizer().getPredictedPoseEstimate().getY() , 2);
-            packet.fieldOverlay().setFill("Red").fillCircle(drive.getLocalizer().getPoseEstimate().getX(),drive.getLocalizer().getPoseEstimate().getY() , 2);
+            for (Point point : pathTraveled)
+            {
+                packet.fieldOverlay().setFill("Orange").fillCircle(point.x, point.y, 0.8);
+            }
+            packet.fieldOverlay().setStroke("Blue").strokeRect(drive.getLocalizer().getPredictedPoseEstimate().getX(), drive.getLocalizer().getPredictedPoseEstimate().getY(), 15, 16);
+            packet.fieldOverlay().setStroke("Red").strokeRect(drive.getLocalizer().getPoseEstimate().getX(), drive.getLocalizer().getPoseEstimate().getY(), 15, 16);
+            pathTraveled.add(drive.getLocalizer().getPoseEstimate().toPoint());
+
+
+            //packet.fieldOverlay().setFill("Blue").fillCircle(drive.getLocalizer().getPredictedPoseEstimate().getX(),drive.getLocalizer().getPredictedPoseEstimate().getY() , 2);
+            //packet.fieldOverlay().setFill("Red").fillCircle(drive.getLocalizer().getPoseEstimate().getX(),drive.getLocalizer().getPoseEstimate().getY() , 2);
 
            /* telemetry.addData("Marker", marker);
             telemetry.addData("Pose predinct", drive.getLocalizer().getPredictedPoseEstimate());

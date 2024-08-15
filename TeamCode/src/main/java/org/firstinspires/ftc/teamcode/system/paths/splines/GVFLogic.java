@@ -10,11 +10,13 @@ import org.opencv.core.Point;
 
 public class GVFLogic
 {
+
     public boolean followTangentially = false;
     public boolean reverse = false;
+    public boolean splineHeading = false;
     public boolean usePID = false;
     @NonNull
-    public Vector calculate(BezierCurve curve, Pose pose, boolean slowDown)
+    public Vector calculate(BezierCurve curve, Pose pose, boolean slowDown, double maxSpeed)
     {
         // correction is like the go back to the fucking line and then path shit is follow the bitch spline
         Point robot = pose.toPoint();
@@ -55,7 +57,8 @@ public class GVFLogic
         }
 
         Vector movementVector = new Vector(Math.cos(direction), Math.sin(direction));
-        double speed = 1;
+        double speed = maxSpeed;
+
         if (robotToEnd.getMagnitude() < 34 && slowDown) // this value
         {
             // like a weighted average for the speed
@@ -63,7 +66,7 @@ public class GVFLogic
         }
         movementVector.scaleBy(speed);
 
-        if (followTangentially) // reverse only affects if we following tangentially so it can be nested here
+        if (followTangentially && !splineHeading) // reverse only affects if we following tangentially so it can be nested here
         {
             if(t == 1 && slowDown) // we only slowdown on the last curve
             {
@@ -83,7 +86,7 @@ public class GVFLogic
 
     }
 
-    private double headingInterpolation(double theta1, double theta2, double t)
+    public double headingInterpolation(double theta1, double theta2, double t)
     {
         //Normalize radians with a scaled (t)
         double diff = theta2 - theta1;
@@ -131,6 +134,11 @@ public class GVFLogic
     public void setFollowTangentially(boolean followTangentially)
     {
         this.followTangentially = followTangentially;
+    }
+
+    public void setSplineHeading(boolean splineHeading)
+    {
+        this.splineHeading = splineHeading;
     }
 
     public void setReverse(boolean reverse)

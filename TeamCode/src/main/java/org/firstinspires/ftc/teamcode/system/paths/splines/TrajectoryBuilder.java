@@ -8,10 +8,11 @@ public class TrajectoryBuilder
 {
     private final ArrayList<TrajectorySegment> segments = new ArrayList<>();
     private Pose finalPose = null;
+    private Pose startPose = null;
     private final ArrayList<SpatialMarker> spatialMarkers = new ArrayList<>();
 
-    public TrajectoryBuilder(TrajectorySegment segment){
-        segments.add(segment);
+    public TrajectoryBuilder(Pose startPose){
+        this.startPose = startPose;
     }
 
     public TrajectoryBuilder addSegment(TrajectorySegment segment){
@@ -30,7 +31,7 @@ public class TrajectoryBuilder
     }
 
     public Trajectory build(){
-        return new Trajectory(segments, finalPose, spatialMarkers);
+        return new Trajectory(segments, startPose, finalPose, spatialMarkers);
     }
     //public Trajectory end() {return new Trajectory(segments, finalPose);}
 }
