@@ -47,7 +47,7 @@ public class MecanumDrive
     }
 
     public static PIDController TRANSLATIONAL_PID = new PIDController(0.27, 0.00000, 0.00034);
-    public static PIDController HEADING_PID = new PIDController(0.5, 0.008, 0.00034);
+    public static PIDController HEADING_PID = new PIDController(0.55, 0, 0.00034);
     private DcMotor FL, FR, BL, BR; // TODO: hardware class > then this
     private RunMode runMode;
     private Localizer localizer;
@@ -167,7 +167,7 @@ public class MecanumDrive
         if (runMode == RunMode.P2P)
         {
 
-            double actualKs = ks * 12.0 / voltageSupplier.get();
+            double actualKs = ks * 14.0 / voltageSupplier.get();
 
             FLPower = (powerVector.getX() - powerVector.getY() - powerVector.getZ()) * (1 - actualKs)
                     + actualKs * Math.signum(powerVector.getX() - powerVector.getY() - powerVector.getZ());
@@ -191,7 +191,7 @@ public class MecanumDrive
 
         } else if(runMode == RunMode.Vector)
         {
-            double actualKs = ks * 12.0 / voltageSupplier.get();
+            double actualKs = ks * 14.0 / voltageSupplier.get();
 
             FL.setPower((powerVector.getX() - powerVector.getY() - powerVector.getZ()) * (1 - actualKs) + actualKs * Math.signum(powerVector.getX() - powerVector.getY() - powerVector.getZ()));
             FR.setPower((powerVector.getX() + powerVector.getY() + powerVector.getZ()) * (1 - actualKs) + actualKs * Math.signum(powerVector.getX() + powerVector.getY() + powerVector.getZ()));
@@ -312,7 +312,7 @@ public class MecanumDrive
         runMode = RunMode.Vector;
         Pose currentPose = localizer.getPredictedPoseEstimate();
         setTargetVector(trajectory.getPowerVectorSplineHeading(currentPose));
-        if (false)//(trajectory.usePid())
+        if (trajectory.usePid())
         {
             runMode = RunMode.P2P;
             setTargetPose(trajectory.getFinalPose());

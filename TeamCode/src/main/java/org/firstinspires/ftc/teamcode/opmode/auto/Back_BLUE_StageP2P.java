@@ -1,4 +1,3 @@
-/*
 package org.firstinspires.ftc.teamcode.opmode.auto;
 
 import static org.firstinspires.ftc.teamcode.opmode.auto.AutoTrajectories.headingPosition;
@@ -16,9 +15,10 @@ import static org.firstinspires.ftc.teamcode.system.hardware.Globals.place;
 import static org.firstinspires.ftc.teamcode.system.hardware.Globals.teamPropLocation;
 import static org.firstinspires.ftc.teamcode.system.hardware.Globals.ticksToInchesSlidesMotor;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -28,11 +28,20 @@ import org.firstinspires.ftc.teamcode.roadrunner.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.system.accessory.LoopTime;
 import org.firstinspires.ftc.teamcode.system.accessory.supplier.TimedSupplier;
 import org.firstinspires.ftc.teamcode.system.hardware.DriveBase;
+import org.firstinspires.ftc.teamcode.system.hardware.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.system.hardware.OuttakeSubsystem;
 import org.firstinspires.ftc.teamcode.system.hardware.SetAuto;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Localizer;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.MecanumDrive;
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Pose;
+import org.firstinspires.ftc.teamcode.system.paths.splines.BezierCurve;
+import org.firstinspires.ftc.teamcode.system.paths.splines.BezierCurveTrajectorySegment;
+import org.firstinspires.ftc.teamcode.system.paths.splines.Trajectory;
+import org.firstinspires.ftc.teamcode.system.paths.splines.TrajectoryBuilder;
+import org.opencv.core.Point;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 @Autonomous(name = "Back Blue Stage Auto P2P", group = "Autonomous")
 public class Back_BLUE_StageP2P extends LinearOpMode {
@@ -51,7 +60,39 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
     AutoPivot pivotLogic = new AutoPivot(numCycleForDifferentLane,0, auto, telemetry,3);
     private double railTarget;
 
-    org.firstinspires.ftc.teamcode.system.paths.splines.Trajectory delayBack1 = new TrajectoryBuilder()
+    Trajectory purpleYellowTrajectory = new org.firstinspires.ftc.teamcode.system.paths.splines.TrajectoryBuilder(new Pose(9.9, 59, Math.toRadians(180)))
+            .addSegment(
+                    new BezierCurveTrajectorySegment(new BezierCurve(new Point[]{
+                            new Point(9.9, 59),
+                            new Point(36, 29)
+                    })))
+            .addFinalPose(new Pose(36, 29, Math.toRadians(180)))
+            .build();
+
+    Trajectory firstIntakeTrajectory = new org.firstinspires.ftc.teamcode.system.paths.splines.TrajectoryBuilder(purpleYellowTrajectory.getFinalPose())
+            .addSegment(
+                    new BezierCurveTrajectorySegment(new BezierCurve(new Point[]{
+                            new Point(36, 29),
+                            new Point(24, 3),
+                            new Point(12, 6.4),
+                            new Point(0, 6.4),
+                            new Point(-12, 6.4),
+                            new Point(-28.7, 6.4),
+
+                    })))
+            .addFinalPose(new Pose(-28, 6.4, Math.toRadians(180)))
+            .build();
+
+    Trajectory depositTrajectory = new TrajectoryBuilder(firstIntakeTrajectory.getFinalPose())
+            .addSegment(
+                    new BezierCurveTrajectorySegment(new BezierCurve(new Point[]{
+                            new Point(-28.7, 6.4),
+                            new Point(14.8, 6.4),
+                            new Point(20, 6.4),
+                            new Point(27, 12),
+                    })))
+            .addFinalPose(new Pose(27, 12, Math.toRadians(180)))
+            .build();
 
     enum AutoState {
         DELAY,
@@ -78,10 +119,13 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
 
     AutoState currentState;
     MecanumDrive drive;
-
+    TelemetryPacket packet;
+    ArrayList<Point> pathTraveled = new ArrayList<>();
+    Trajectory trajectoryBeingFollowed = purpleYellowTrajectory;
+    FtcDashboard dashboard = FtcDashboard.getInstance();
     @Override
     public void runOpMode() throws InterruptedException {
-
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
         frontOrBackAuto = false;
         SetAuto.setBlueAuto();
@@ -119,25 +163,26 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                 telemetry.addLine("Back");
             }
             telemetry.addData("S", S);
-            telemetry.update();
+
         }
 
 
         waitForStart();
         if (isStopRequested()) return;
 
-        DriveBase driveBase = new DriveBase();
+        DriveBase driveBase = new DriveBase(telemetry);
         driveBase.initDrivebase(hardwareMap);
         driveBase.drivebaseSetup();
+        driveBase.setUpFloat();
 
         VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        TimedSupplier<Double> voltageSupplier = new TimedSupplier<>( voltageSensor::getVoltage, 100);
+        TimedSupplier<Double> voltageSupplier = new TimedSupplier<>(voltageSensor::getVoltage, 100);
 
         drive = new MecanumDrive(
                 driveBase.FL, driveBase.FR, driveBase.BL, driveBase.BR,
-                MecanumDrive.RunMode.P2P, voltageSupplier);
-        // runs instantly once
+                MecanumDrive.RunMode.Vector, voltageSupplier);
         drive.setLocalizer(new Localizer(hardwareMap, auto.autoTrajectories.startPoseBack, this));
+
         auto.afterWaitForStart(!frontOrBackAuto, frontOrBackAuto? auto.autoTrajectories.startPoseFront: auto.autoTrajectories.startPoseBack);
         if (frontOrBackAuto){
             currentState = AutoState.DELAY;
@@ -147,6 +192,7 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
 
         // can set drive constraints here
         while (opModeIsActive() && !isStopRequested()) {
+            packet = new TelemetryPacket();
             // Reading at the start of the loop
             for (LynxModule module : hardwareMap.getAll(LynxModule.class)) { // turns on bulk reads cannot double read or it will call multiple bulkreads in the one thing
                 module.clearBulkCache();
@@ -183,8 +229,24 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
             telemetry.addData("armHeight", auto.armHeight);
             //telemetry.addData("intakeSlidePosition", auto.intakeSubsystem.intakeSlidePosition);
 
+            packet = new TelemetryPacket();
+            for (Point point: trajectoryBeingFollowed.getFullCurve())
+            {
+                //telemetry.addData("POINT", point);
+                packet.fieldOverlay().setFill("black").fillCircle(point.x, point.y, 1);
+
+            }
+            for (Point point : pathTraveled)
+            {
+                packet.fieldOverlay().setFill("Orange").fillCircle(point.x, point.y, 0.8);
+            }
+            packet.fieldOverlay().setStroke("Blue").strokeRect(drive.getLocalizer().getPredictedPoseEstimate().getX() - 7.5, drive.getLocalizer().getPredictedPoseEstimate().getY() - 8, 14.5, 16);
+            packet.fieldOverlay().setStroke("Red").strokeRect(drive.getLocalizer().getPoseEstimate().getX() - 7.5, drive.getLocalizer().getPoseEstimate().getY() - 8, 14.5, 16);
+            pathTraveled.add(drive.getLocalizer().getPoseEstimate().toPoint());
 
 
+            drive.update();
+            dashboard.sendTelemetryPacket(packet);
 
         }
         auto.outtakeSubsystem.gripperServoState(OuttakeSubsystem.GripperServoState.OPEN);
@@ -201,14 +263,18 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
             case DELAY_BACK:
                 if(auto.delayState(!isArmDown? 100:0)){
                     currentState = AutoState.PRELOAD_DRIVE_BACK;
+                    teamPropLocation = 1;
                     if (teamPropLocation == 1){
-                        drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive1.end()));
+//                        drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive1.end()));
                         //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.PreloadDrive1);
+                        drive.followTrajectory(purpleYellowTrajectory);
+                        trajectoryBeingFollowed = purpleYellowTrajectory;
+
                     } else if (teamPropLocation == 2){
-                        drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive2.end()));
+                        //drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive2.end()));
                         //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.PreloadDrive2);
                     } else if (teamPropLocation == 3){
-                        drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive3.end()));
+                        //drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive3.end()));
                         //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.PreloadDrive3);
                     }
                 }
@@ -225,28 +291,14 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                 break;
 
             case DELAY:
-                if(auto.delayState(0)){
-                    if (teamPropLocation == 1){
-                        auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.PreloadDrive1FrontStage);
-                    } else if (teamPropLocation == 2){
-                        auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.PreloadDrive2FrontStage);
-                    } else if (teamPropLocation == 3){
-                        auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.PreloadDrive3FrontFirst);
-                    }
-                    if (teamPropLocation != 3){
-                        currentState = AutoState.PRELOAD_DRIVE;
-                    } else {
-                        currentState = AutoState.PRELOAD_DRIVE_CASE_3;
-                    }
 
-                }
                 break;
 
             case PRELOAD_DRIVE_CASE_3:
                 if (auto.preloadDriveState3()){
                     currentState = AutoState.AFTER_PRELOAD_DRIVE_3;
                     //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.PreloadDrive3FrontSecond);
-                    drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive3FrontSecond.end()));
+                    //drive.setTargetPose(new Pose(auto.autoTrajectories.PreloadDrive3FrontSecond.end()));
                 }
                 break;
 
@@ -271,14 +323,15 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                         if (auto.GlobalTimer.seconds() > delayForYellow){
                             Trajectory startDrive = null;
                             if (teamPropLocation == 2){
-                                startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple2;
+                                //startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple2;
                             } else if (teamPropLocation == 1){
-                                startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple1;
+                                trajectoryBeingFollowed = firstIntakeTrajectory;
+                                drive.followTrajectory(firstIntakeTrajectory);
+                                //startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple1;
                             } else if (teamPropLocation == 3){
-                                startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple3;
+                                //startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple3;
                             }
                             //auto.autoTrajectories.drive.followTrajectoryAsync(startDrive);
-                            drive.setTargetPose(startDrive.end());
                             currentState = AutoState.TRANSFER_PIXEL;
                         }
                     }
@@ -290,14 +343,14 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                     if (auto.GlobalTimer.seconds() > delayForYellow){
                         Trajectory startDrive = null;
                         if (teamPropLocation == 2){
-                            startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple2;
+                            //startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple2;
                         } else if (teamPropLocation == 1){
-                            startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple1;
+                            //startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple1;
                         } else if (teamPropLocation == 3){
-                            startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple3;
+                            //startDrive = auto.autoTrajectories.firstDriveThroughStageAfterPurple3;
                         }
                         //auto.autoTrajectories.drive.followTrajectoryAsync(startDrive);
-                        drive.setTargetPose(startDrive.end());
+                        //drive.setTargetPose(startDrive.end());
                         currentState = AutoState.TRANSFER_PIXEL;
                     }
                 }
@@ -312,7 +365,7 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                     }
                 }
                 if (numCycles < 3){
-                    auto.goBackToStack(3,6,-29.3);
+                    //auto.goBackToStack(3,6,-29.3);
                 }
                 if (auto.goBackToStack){
                     currentState = AutoState.GRAB_OFF_STACK;
@@ -327,7 +380,7 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                 double liftTarget = 0; // could cause issues if these stay zero
                 int pitchTarget = 0;
                 int intakeSlideTarget = 330; // pre-extend intake for most cycles
-                Trajectory intakeTrajectory = null;
+                com.acmerobotics.roadrunner.trajectory.Trajectory intakeTrajectory = null;
                 boolean openGrippers = true;
                 boolean extendStraightAway = false;
                 if (xPosition > -7 && numCycles != 0){ // custom extend on the first cycle
@@ -369,9 +422,9 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                         intakeSlideTarget,railLogic,pivotLogic,extendStraightAway,
                         true, false, openGrippers, true);
                 if (auto.goToParkAfterOuttaking && outtakePixelFinished){ // if team prop location is 1 we don't want more pixels //|| (teamPropLocation == 1 && numCycles == 3)
-                    intakeTrajectory = auto.autoTrajectories.parkTrajectory(poseEstimate,2);
+                    //intakeTrajectory = auto.autoTrajectories.parkTrajectory(poseEstimate,2);
                     currentState = AutoState.PARK;
-                    auto.autoTrajectories.drive.followTrajectoryAsync(intakeTrajectory);
+                    //auto.autoTrajectories.drive.followTrajectoryAsync(intakeTrajectory);
                 }
                 else if (outtakePixelFinished){
 
@@ -384,16 +437,13 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                         intakeTrajectory = auto.autoTrajectories.driveIntoStackAngledAfterAngledOuttakeTrajectoryStage(new Pose2d(xPosition+2.7,yPosition,headingPosition),19,-3,endAngleForStacks,3,3.8 + S == -1?-1.4:0,-18);
                     }
                     //TODO mental note - if you move the x distance upwards the angle needs to be less and the offset needs to be more for the spline to work properly
-                    */
-/*else if (numCycles == 4){
+else if (numCycles == 4){
                         intakeTrajectory = auto.autoTrajectories.driveIntoStackAngledAfterAngledOuttakeTrajectoryStage(poseEstimate,22,-2,endAngleForStacks,3,0,-23);
-                    }*//*
+                    }
 
                     didWeFuckingRelocalize = auto.resetPosWithAprilTags(3,S == -1? false:true);
-
-                    if (intakeTrajectory != null){
-                        auto.autoTrajectories.drive.followTrajectoryAsync(intakeTrajectory);
-                    }
+                    trajectoryBeingFollowed = firstIntakeTrajectory;
+                    drive.followTrajectory(firstIntakeTrajectory);
 
                     currentState = AutoState.DROP;
                 }
@@ -434,24 +484,28 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                     if (numCycles == 1){ // for very first cycle
                         if (frontOrBackAuto){
                             if (teamPropLocation == 1){
-                                drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterYellowStage1.end());
+                                trajectoryBeingFollowed = firstIntakeTrajectory;
+                                drive.followTrajectory(firstIntakeTrajectory);
+                                //drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterYellowStage1.end());
                                 //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.driveIntoStacksAfterYellowStage1);
                             } else if (teamPropLocation == 2){
-                                drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterYellowStage2.end());
+                                //drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterYellowStage2.end());
                                 //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.driveIntoStacksAfterYellowStage2);
                             } else if (teamPropLocation == 3){
-                                drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterYellowStage3.end());
+                                //drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterYellowStage3.end());
                                 //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.driveIntoStacksAfterYellowStage3);
                             }
                         } else { // for the back side autos we just run this straight away
                             if (teamPropLocation == 1){
-                                drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterBackStage1.end());
+                                trajectoryBeingFollowed = firstIntakeTrajectory;
+                                drive.followTrajectory(firstIntakeTrajectory);
+                                //drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterBackStage1.end());
                                 //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.driveIntoStacksAfterBackStage1);
                             } else if (teamPropLocation == 2){
-                                drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterBackStage2.end());
+                                //drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterBackStage2.end());
                                 //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.driveIntoStacksAfterBackStage2);
                             } else if (teamPropLocation == 3){
-                                drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterBackStage3.end());
+                                //drive.setTargetPose(auto.autoTrajectories.driveIntoStacksAfterBackStage3.end());
                                 //auto.autoTrajectories.drive.followTrajectoryAsync(auto.autoTrajectories.driveIntoStacksAfterBackStage3);
                             }
                         }
@@ -485,24 +539,22 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                     if (xPosition < 8){//xPosition < -17
                         auto.autoTrajectories.extendSlidesAroundStage = true;
                     }
-                    */
-/*yOffset = 4;
-                    xSplineValue = 6;*//*
+yOffset = 4;
+                    xSplineValue = 6;
 
-                   */
-/* if (S == 1){
+ if (S == 1){
                         extendSlides = true;
-                    }*//*
+                    }
 
                 }
                 if (numCycles == 2){
                     slideSpeed = 0.83;
                     if (S == 1? xPosition < 12 : xPosition < 12){ //  xPosition < -14
                         auto.autoTrajectories.extendSlidesAroundStage = true;
-                    }*/
-/*if (S == 1){
+                    }
+if (S == 1){
                         extendSlides = true;
-                    }*//*
+                    }
 
                 }
                 if (numCycles == 3){
@@ -527,40 +579,37 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
                     currentState = AutoState.AFTER_GRAB_OFF_STACK;
 
                     Trajectory outtakeTrajectory = null;
-                 */
-/*   if (numCycles == 1){
-                        outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,18, 171, 4.8,14);
+   if (numCycles == 1){
                     }
                     if (numCycles == 2){
-                        outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,18, 169, 4.8,14);
+                        //outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,18, 169, 4.8,14);
                     } else if (numCycles == 3){
-                        outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,16, 168, 5.4,12);
+                        //outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,16, 168, 5.4,12);
                     } else if (numCycles == 4){
-                        outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,16, 168, 5.4,12);
-                    }*//*
+                        //outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,16, 168, 5.4,12);
+                    }
 
 
 
-                 */
-/*   if (numCycles >= 3) { // for the longer delay we follow the trajectory after the wait - just so its more consistent hopefully
+   if (numCycles >= 3) { // for the longer delay we follow the trajectory after the wait - just so its more consistent hopefully
                           //outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromAngleTurnEndTrajectory(poseEstimate, 20, 31, endTangent, -yOffset, 3,-3,10);
-                          outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,20, 173, 4.3);
+                          //outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,20, 173, 4.3);
                        //   auto.autoTrajectories.drive.followTrajectoryAsync(outtakeTrajectory);
                       }
                     //  else{// (numCycles < 4) {
                     // this is the old spline path
                     else {
-                          outtakeTrajectory = auto.autoTrajectories.simplifiedOuttakeDrive(poseEstimate, numCycles >= 3 ? 22 : 19, 176.8, endTangent, yOffset, xSplineValue);
-                         }*//*
+                          //outtakeTrajectory = auto.autoTrajectories.simplifiedOuttakeDrive(poseEstimate, numCycles >= 3 ? 22 : 19, 176.8, endTangent, yOffset, xSplineValue);
+                         }
 
-                    outtakeTrajectory = auto.autoTrajectories.simplifiedOuttakeDrive(poseEstimate, numCycles >= 3 ? 21 : 22, 176.8, endTangent, yOffset, xSplineValue, xEnd);
+                    //outtakeTrajectory = auto.autoTrajectories.simplifiedOuttakeDrive(poseEstimate, numCycles >= 3 ? 21 : 22, 176.8, endTangent, yOffset, xSplineValue, xEnd);
                     //      outtakeTrajectory = auto.autoTrajectories.outtakeDriveFromStraightTUrnEndStageV2Trajectory(poseEstimate,18, 175, 4);
                     //     outtakeTrajectory = auto.autoTrajectories.outtakeDriveMiddlePathTrajectory(poseEstimate,18, 175, 4);
                     //   }
-                    if (outtakeTrajectory != null){
-                        drive.setTargetPose(outtakeTrajectory.end());
-                        auto.autoTrajectories.drive.followTrajectoryAsync(outtakeTrajectory);
-                    }
+
+                    trajectoryBeingFollowed = depositTrajectory;
+                    drive.followTrajectory(depositTrajectory);
+
                 }
                 break;
             case AFTER_GRAB_OFF_STACK:
@@ -579,4 +628,4 @@ public class Back_BLUE_StageP2P extends LinearOpMode {
         }
 
     }
-}*/
+}

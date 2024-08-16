@@ -20,7 +20,6 @@ public class Trajectory
     private boolean isFinished = false;
     private boolean usePID = false;
     private Pose startPose, finalPose;
-    private final double SPATIAL_MARKER_THRESHOLD = 0.5; //in, this might be too big idk
 
     private ArrayList<SpatialMarker> spatialMarkers;
 
@@ -50,6 +49,20 @@ public class Trajectory
     {
         numberOfSegments = segments.size() - 1;
         fullCurve = returnFullCurve();
+        for (SpatialMarker marker : spatialMarkers)
+        {
+            double closestDistance = Double.POSITIVE_INFINITY;
+            for (TrajectorySegment segment : segments)
+            {
+                Point distAndT = segment.getClosestDistanceAndT(marker.spatialPoint.toPoint());
+                if (distAndT.y < closestDistance)
+                {
+                    closestDistance = distAndT.y;
+                    marker.t = distAndT.x;
+                    marker.u = segments.indexOf(segment);
+                }
+            }
+        }
     }
 
     public Vector getPowerVector(Pose pose) // this should work lol, idk fucking know tho
@@ -87,7 +100,7 @@ public class Trajectory
         {
             for(SpatialMarker marker : spatialMarkers)
             {
-                if(pose.getDistance(marker.spatialPoint) < SPATIAL_MARKER_THRESHOLD)
+                if(t >= marker.t && u >= marker.u) // this guarantee that the spatial marker will run on the closest point
                 {
                     marker.callback.onMarker();
                     spatialMarkers.remove(marker);
@@ -133,11 +146,11 @@ public class Trajectory
         {
             isFinished = true;
         }
-        if(!spatialMarkers.isEmpty())
+        if(!spatialMarkers.isEmpty()) // hope this doesn't break shit
         {
             for(SpatialMarker marker : spatialMarkers)
             {
-                if(pose.getDistance(marker.spatialPoint) < SPATIAL_MARKER_THRESHOLD)
+                if(t >= marker.t && u >= marker.u) // this guarantee that the spatial marker will run on the closest point
                 {
                     marker.callback.onMarker();
                     spatialMarkers.remove(marker);
@@ -172,10 +185,9 @@ public class Trajectory
 
 
         Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve, segments.get(u).getMaxSpeed());
-        // we need to change the z component of the power vector, yes this being done here is dodgy as fuck but i don't care
+        // we need to change the z component of the power vector, yes this being done here is dodgy as fuck but i don't care (it needs to be here because i want to interpolate using the u value of the trajectory
         double finalHeading = finalPose.getHeading();
-        double startHeading = startPose.getHeading();
-        double headingDiff = gvfLogic.headingInterpolation(startHeading, finalHeading, (u + t) / (numberOfSegments + 1)) - pose.getHeading(); // remove heading because we want the diff
+        double headingDiff = gvfLogic.headingInterpolation(pose.getHeading(), finalHeading, (u + t) / (numberOfSegments + 1)) - pose.getHeading(); // remove heading because we want the diff
         //headingDiff = normalizeRadians(headingDiff - pose.getHeading());
         powerVector = new Vector(powerVector.getX(), powerVector.getY(), headingDiff);
 
@@ -190,7 +202,7 @@ public class Trajectory
         {
             for(SpatialMarker marker : spatialMarkers)
             {
-                if(pose.getDistance(marker.spatialPoint) < SPATIAL_MARKER_THRESHOLD)
+                if(t >= marker.t && u >= marker.u) // this guarantee that the spatial marker will run on the closest point
                 {
                     marker.callback.onMarker();
                     spatialMarkers.remove(marker);
