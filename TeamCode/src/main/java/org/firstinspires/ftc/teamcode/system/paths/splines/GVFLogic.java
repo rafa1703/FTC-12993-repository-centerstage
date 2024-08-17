@@ -11,12 +11,13 @@ import org.opencv.core.Point;
 public class GVFLogic
 {
 
+    //This whole
     public boolean followTangentially = false;
     public boolean reverse = false;
     public boolean splineHeading = false;
     public boolean usePID = false;
-    @NonNull
-    public Vector calculate(BezierCurve curve, Pose pose, boolean slowDown, double maxSpeed)
+
+    public Vector calculate(@NonNull BezierCurve curve, Pose pose, boolean slowDown, double maxSpeed)
     {
         // correction is like the go back to the fucking line and then path shit is follow the bitch spline
         Point robot = pose.toPoint();
@@ -81,7 +82,7 @@ public class GVFLogic
 
         }
         // tbh idk if the dist check is necessary here
-        usePID = t == 1;
+        usePID = t == 1 && robotToEnd.getMagnitude() < 4;
         return movementVector;
 
     }

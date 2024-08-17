@@ -16,7 +16,7 @@ public class Trajectory
     private int numberOfSegments;
     GVFLogic gvfLogic = new GVFLogic();
     ArrayList<Point> fullCurve;
-    private double threshold = 0.5; // this is the default
+    private double threshold = 1.5; // this is the default
     private boolean isFinished = false;
     private boolean usePID = false;
     private Pose startPose, finalPose;

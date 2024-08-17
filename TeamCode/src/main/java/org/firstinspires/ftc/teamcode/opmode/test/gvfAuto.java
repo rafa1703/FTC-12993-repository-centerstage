@@ -111,11 +111,7 @@ public class gvfAuto extends LinearOpMode
                                 new Point(-28.7, 6.4),
 
                         })))
-                .addSpatialMarker(new Pose(-24, 6.4), () ->
-                {
-                    intakeSubsystem.intakeSlideInternalPID(800, 0.85);
-                    intakeSubsystem.intakeSpin(1);
-                })
+
                 .addFinalPose(new Pose(-28, 6.4, Math.toRadians(180)))
                 .build();
 
@@ -129,7 +125,31 @@ public class gvfAuto extends LinearOpMode
                         })))
                 .addFinalPose(new Pose(27, 12, Math.toRadians(180)))
                 .build();
+        Trajectory secondIntakeTrajectory = new TrajectoryBuilder(depositTrajectory.getFinalPose())
+                .addSegment(new BezierCurveTrajectorySegment(new BezierCurve(new Point[]{
+                        new Point(27, 12),
+                        new Point(20, 6.4),
+                        new Point(14.8, 6.4),
+                        new Point(-28.7, 6.4),
+                        new Point(-30, 6.4),
+                        new Point(-34, 8.6),
+                })))
+                /*new BezierCurveTrajectorySegment(new BezierCurve(new Point[]{
+                        new Point(27, 12),
+                        new Point(20, 6.4),
+                        new Point(14.8, 6.4),
+                        new Point(-28.7, 6.4),
+                })))
 
+                .addSegment(new BezierCurveTrajectorySegment(new BezierCurve(new Point[]{
+                        new Point(-28.7, 6.4),
+                        new Point(-30, 6.4),
+                        new Point(-34, 7.6),
+
+                }), 0.5))*/
+                //new Pose(-34, 8.6, Math.toRadians(180)))
+                // TODO: test if the automatic final pose works
+                .build();
 
         //drive.setSpeed(1);
         ArrayList<Point> fullCurve = purpleYellowTrajectory.getFullCurve();
@@ -152,6 +172,11 @@ public class gvfAuto extends LinearOpMode
                 case 2:
                     fullCurve = depositTrajectory.getFullCurve();
                     drive.followTrajectorySplineHeading(depositTrajectory);
+                    if(depositTrajectory.isFinished()) state++;
+                    break;
+                case 3:
+                    fullCurve = secondIntakeTrajectory.getFullCurve();
+                    drive.followTrajectoryTangentially(secondIntakeTrajectory, false);
                     break;
             }
             intakeSubsystem.intakeClipServoState(IntakeSubsystem.IntakeClipServoState.HOLDING);
@@ -170,9 +195,14 @@ public class gvfAuto extends LinearOpMode
             {
                 packet.fieldOverlay().setFill("Orange").fillCircle(point.x, point.y, 0.8);
             }
-            packet.fieldOverlay().setStroke("Blue").strokeRect(drive.getLocalizer().getPredictedPoseEstimate().getX() - 7.5, drive.getLocalizer().getPredictedPoseEstimate().getY() - 8, 14.5, 16);
+            //packet.fieldOverlay().setStroke("Blue").strokeRect(drive.getLocalizer().getPredictedPoseEstimate().getX() - 7.5, drive.getLocalizer().getPredictedPoseEstimate().getY() - 8, 14.5, 16);
             packet.fieldOverlay().setStroke("Red").strokeRect(drive.getLocalizer().getPoseEstimate().getX() - 7.5, drive.getLocalizer().getPoseEstimate().getY() - 8, 14.5, 16);
             pathTraveled.add(drive.getLocalizer().getPoseEstimate().toPoint());
+            if (pathTraveled.size() > 50)
+            {
+                pathTraveled.remove(0);
+
+            }
 
 
            /* packet.fieldOverlay().setFill("Blue").fillCircle(drive.getLocalizer().getPredictedPoseEstimate().getX(),drive.getLocalizer().getPredictedPoseEstimate().getY() , 2);

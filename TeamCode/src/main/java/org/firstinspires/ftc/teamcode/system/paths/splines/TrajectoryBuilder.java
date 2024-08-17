@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.system.paths.splines;
 
 import org.firstinspires.ftc.teamcode.system.paths.P2P.Pose;
+import org.firstinspires.ftc.teamcode.system.paths.P2P.Vector;
 
 import java.util.ArrayList;
 
@@ -31,6 +32,11 @@ public class TrajectoryBuilder
     }
 
     public Trajectory build(){
+        if (finalPose == null)
+        {
+            Vector finalVector = segments.get(segments.size() -1).getEndPoint(); // transform vector into the final pose
+            finalPose = new Pose(finalVector.getX(), finalVector.getY(), finalVector.getAngle());
+        }
         return new Trajectory(segments, startPose, finalPose, spatialMarkers);
     }
     //public Trajectory end() {return new Trajectory(segments, finalPose);}
