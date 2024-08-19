@@ -22,23 +22,22 @@ public class GVFLogic
         // correction is like the go back to the fucking line and then path shit is follow the bitch spline
         Point robot = pose.toPoint();
         Vector endPoint = curve.getEndPoint();
-        Vector closestPoint = curve.returnClosestPointOnCurve(robot); //TODO: there are two full loop iterations of all points in the curve
-        double t = curve.returnClosesT(robot);
+        // FIXME: 18/8/2024 i am an idiot and this will proably never fucking work and i just wasting time because i m...
+        double t = curve.returnClosestT(robot);
+        Vector closestPoint = new Vector(curve.parametric(t));
         Vector derivative = curve.getTangentialVector(t);
-        Vector robotToPoint = new Vector(closestPoint.getX() - robot.x, closestPoint.getY() - robot.y);
+        Vector robotToPoint = closestPoint.subtract(robot);
         Vector robotToEnd = endPoint.subtract(robot);
 
         double CORRECTION_DIS = 30; // tune
         double SAVING_THROW_DIS = 24;
-        // this values are like for a visualizer so like robot smaller ig, this is effectively 10 because magSqr
 
         double directPursuitThreshold = 1;
-
-        // TODO: go from above or use O(log2) alg
-        for(double i = 0; i <= 1; i += 1 / curve.getInterval()) // okay so this is like at the point lets iterate trough all points and find out if the distance of the point to the end point if its lower than the threshold
+        // going from above now should not break anything and improve cycle times
+        for(double i = 1; i >= 0; i -= 1 / curve.getInterval()) // okay so this is like at the point lets iterate trough all points and find out if the distance of the point to the end point if its lower than the threshold
         {
             double dist = endPoint.subtract(curve.parametric(i)).getMagnitude();
-            // if we are closer than the threshold we can start dirctly following the curve
+            // if we are closer than the threshold we can start directly following the curve
             if (dist < SAVING_THROW_DIS)
             {
                 directPursuitThreshold = i;
@@ -50,8 +49,8 @@ public class GVFLogic
         double direction = headingInterpolation(derivative.getAngle(), robotToPoint.getAngle(), correctionScale);
 
         Vector tempRobot = new Vector(robot.x, robot.y);
-        // this just say if the closest point and the robot is tangent or t is greater than the follow the path threshold we follow the last point
-        if ((t == 1 && Math.abs(tempRobot.subtract(closestPoint).getAngle() - derivative.getAngle()) <= 0.5 * Math.PI) //TODO: is the first condition necessary?
+        // this just say if the closest point and the robot is tangent or t is greater than the follow the path threshold we follow the end point
+        if ((t == 1 && Math.abs(tempRobot.subtract(closestPoint).getAngle() - derivative.getAngle()) <= 0.5 * Math.PI)
                 || t >= directPursuitThreshold)
         {
             direction = endPoint.subtract(robot).getAngle();
@@ -60,7 +59,7 @@ public class GVFLogic
         Vector movementVector = new Vector(Math.cos(direction), Math.sin(direction));
         double speed = maxSpeed;
 
-        if (robotToEnd.getMagnitude() < 34 && slowDown) // this value
+        if (robotToEnd.getMagnitude() < 34 && slowDown)
         {
             // like a weighted average for the speed
             speed = interpolation(0.15, speed, robotToEnd.getMagnitude() / 34);
@@ -107,28 +106,46 @@ public class GVFLogic
     }
 
 
-    private double binomalSearch(BezierCurve curve, Point point, double start, double end)
+    private double binomalSearch(BezierCurve curve, Point robot, double start, double end)
     {
-        Vector robot = new Vector(point);
         double middle = (start + end) / 2;
 
-        //Point p = curve.parametric(middle);
         Point startPoint = curve.parametric(start);
         Point endPoint = curve.parametric(end);
-        //Vector robotToPoint = new Vector(p.x - robot.getX(), p.y - robot.getY());
-        Vector robotToEnd = new Vector(endPoint.x - robot.getX(), endPoint.y - robot.getY());
-        Vector robotToStart = new Vector(startPoint.x - robot.getX(), startPoint.y - robot.getY());
+        Vector robotToEnd = new Vector(endPoint.x - robot.x, endPoint.y - robot.y);
+        Vector robotToStart = new Vector(startPoint.x - robot.x, startPoint.y - robot.y);
 
-        if (robotToStart.getMagSqr() < robotToEnd.getMagSqr())
+        if (robotToStart.getMagnitude() < robotToEnd.getMagnitude())
         {
-            return binomalSearch(curve, point, start, middle);
+            return binomalSearch(curve, robot, start, middle);
         }
-        else if (robotToStart.getMagSqr() > robotToEnd.getMagSqr())
+        else if (robotToStart.getMagnitude() > robotToEnd.getMagnitude())
         {
-            return binomalSearch(curve, point, middle, end);
+            return binomalSearch(curve, robot, middle, end);
         }
         else return middle;
         //if ()
+
+    }
+
+        private double binomalSearch2(BezierCurve curve, Point point, double start, double end)
+    {
+        // is this just like not the same ans iterating trough the whole fucking curve??
+        Vector robot = new Vector(point);
+        Point startPoint = curve.parametric(start);
+        Point endPoint = curve.parametric(end);
+        Vector robotToEnd = new Vector(endPoint.x - robot.getX(), endPoint.y - robot.getY());
+        Vector robotToStart = new Vector(startPoint.x - robot.getX(), startPoint.y - robot.getY());
+
+        if (robotToStart.getMagnitude() < robotToEnd.getMagnitude())
+        {
+            return binomalSearch(curve, point, start, end - (1/curve.getInterval()));
+        }
+        else if (robotToStart.getMagnitude() > robotToEnd.getMagnitude())
+        {
+            return binomalSearch(curve, point, start +(1/ curve.getInterval()), end);
+        }
+        return start;
 
     }
 

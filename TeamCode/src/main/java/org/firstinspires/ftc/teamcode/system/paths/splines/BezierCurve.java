@@ -23,14 +23,15 @@ public class BezierCurve
     {
         if (!(t >= 0 && t <= 1))
         {
-            throw new RuntimeException("Outside of domain");
+            throw new RuntimeException("Outside of domain: " + t);
         }
 
         double x = 0, y = 0;
         for(int r = 0; r <= n; r++)
         {
-            x += computeBinomial(n, r) * Math.pow(1 - t, n - r) * Math.pow(t, r) * points[r].x;
-            y += computeBinomial(n, r) * Math.pow(1 - t, n - r) * Math.pow(t, r) * points[r].y;
+            double pow = Math.pow(1 - t, n - r);
+            x += computeBinomial(n, r) * pow * Math.pow(t, r) * points[r].x;
+            y += computeBinomial(n, r) * pow * Math.pow(t, r) * points[r].y;
         }
 
         return new Point(x, y);
@@ -82,11 +83,13 @@ public class BezierCurve
         for(int r = 0; r <= n; r++)
         {
             //x += computeBinomial(n, r) * -1 * (r-n) * Math.pow(1 - t, n - r - 1) * r * Math.pow(t, r - 1) * points[r].x;
-            x += computeBinomial(n, r) * points[r].x * Math.pow(1-t, n - r - 1) * Math.pow(t, r - 1) * (r - t * n);
+            double pow = Math.pow(1 - t, n - r - 1);
+            x += computeBinomial(n, r) * points[r].x * pow * Math.pow(t, r - 1) * (r - t * n);
 
             //y += computeBinomial(n, r) * -1 * (r-n) * Math.pow(1 - t, n - r - 1) * r * Math.pow(t, r - 1) * points[r].y;
-            y += computeBinomial(n, r) * points[r].y * Math.pow(1 - t, n - r - 1) * Math.pow(t, r - 1) * (r - t * n);
+            y += computeBinomial(n, r) * points[r].y * pow * Math.pow(t, r - 1) * (r - t * n);
         }
+
 
         return new Point(x, y);
     }
@@ -243,14 +246,30 @@ public class BezierCurve
     }
 
 
-    public double returnClosesT(Point point)
+    public double returnClosestT(Point point)
     {
         double closest = 0;
         double smallerDistance = Double.POSITIVE_INFINITY;
         for(int i = 0; i <= interval; i++)
         {
             Point p = parametric(i * (1/ interval));
-            double d = Math.hypot(p.x - point.x, p.y - point.y) * Math.hypot(p.x - point.x, p.y - point.y);
+            double d = Math.hypot(p.x - point.x, p.y - point.y);
+            if (d <= smallerDistance)
+            {
+                closest = i * (1/interval);
+                smallerDistance = d;
+            }
+        }
+        return closest;
+    }
+    public double returnClosestT(Point point, double start, double end)
+    {
+        double closest = 0;
+        double smallerDistance = Double.POSITIVE_INFINITY;
+        for(double i = start; i <= end; i += (1/ interval))
+        {
+            Point p = parametric(i);
+            double d = Math.hypot(p.x - point.x, p.y - point.y);
             if (d <= smallerDistance)
             {
                 closest = i * (1/interval);
@@ -260,6 +279,30 @@ public class BezierCurve
         return closest;
     }
 
+    private double shittySearch(BezierCurve curve, Point robot)
+    {
+        double start = 0;
+        double end = 1;
+        double middle = (start + end) / 2;
+
+        for (int i = 0; i < 4; i++)
+        {
+            Point startPoint = curve.parametric(start);
+            Point endPoint = curve.parametric(end);
+            Vector robotToEnd = new Vector(endPoint.x - robot.x, endPoint.y - robot.y);
+            Vector robotToStart = new Vector(startPoint.x - robot.x, startPoint.y - robot.y);
+            if (robotToStart.getMagnitude() < robotToEnd.getMagnitude()) // closer to start
+            {
+                end = middle;
+            }
+            if (robotToStart.getMagnitude() > robotToEnd.getMagnitude()) // closer to end
+            {
+                start = middle;
+            }
+            else return middle;
+        }
+        return returnClosestT(robot, start, end);
+    }
 
 
     public Vector getEndPoint()

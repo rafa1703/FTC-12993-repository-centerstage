@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.teamcode.system.accessory.LoopTime;
 import org.firstinspires.ftc.teamcode.system.accessory.supplier.TimedSupplier;
 import org.firstinspires.ftc.teamcode.system.hardware.DriveBase;
 import org.firstinspires.ftc.teamcode.system.hardware.IntakeSubsystem;
@@ -31,11 +32,14 @@ public class gvfAuto extends LinearOpMode
     boolean marker = false;
     ArrayList<Point> pathTraveled = new ArrayList<>();
 
+
     int state = 0;
     @Override
     public void runOpMode() throws InterruptedException
     {
+
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+        LoopTime timer = new LoopTime();
         DriveBase driveBase = new DriveBase(telemetry);
         IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
         intakeSubsystem.initIntake(hardwareMap);
@@ -165,17 +169,17 @@ public class gvfAuto extends LinearOpMode
                     if(purpleYellowTrajectory.isFinished()) state++;
                     break;
                 case 1:
-                    fullCurve = firstIntakeTrajectory.getFullCurve();
+                    //fullCurve = firstIntakeTrajectory.getFullCurve();
                     drive.followTrajectory(firstIntakeTrajectory);
                     if(firstIntakeTrajectory.isFinished()) state++;
                     break;
                 case 2:
-                    fullCurve = depositTrajectory.getFullCurve();
+                    //fullCurve = depositTrajectory.getFullCurve();
                     drive.followTrajectorySplineHeading(depositTrajectory);
                     if(depositTrajectory.isFinished()) state++;
                     break;
                 case 3:
-                    fullCurve = secondIntakeTrajectory.getFullCurve();
+                    //fullCurve = secondIntakeTrajectory.getFullCurve();
                     drive.followTrajectoryTangentially(secondIntakeTrajectory, false);
                     break;
             }
@@ -183,7 +187,8 @@ public class gvfAuto extends LinearOpMode
             //drive.followTrajectoryTangentially(trajectory, true);
             //drive.followTrajectorySplineHeading(trajectory);
             drive.update();
-
+            timer.updateLoopTime(telemetry);
+/*
             packet = new TelemetryPacket();
             for (Point point: fullCurve)
             {
@@ -202,7 +207,7 @@ public class gvfAuto extends LinearOpMode
             {
                 pathTraveled.remove(0);
 
-            }
+            }*/
 
 
            /* packet.fieldOverlay().setFill("Blue").fillCircle(drive.getLocalizer().getPredictedPoseEstimate().getX(),drive.getLocalizer().getPredictedPoseEstimate().getY() , 2);
@@ -217,9 +222,9 @@ public class gvfAuto extends LinearOpMode
             /*telemetry.addData("Heading", Math.toDegrees(drive.getLocalizer().getHeading()));
             telemetry.addData("HeadingScale", gvfLogic.headingS );
             telemetry.addData("Z vector", Math.toDegrees(gvfLogic.zVector));
-            telemetry.addData("looptime");
-            telemetry.update();*/
-            dashboard.sendTelemetryPacket(packet);
+            telemetry.addData("looptime");*/
+            telemetry.update();
+            //dashboard.sendTelemetryPacket(packet);
         }
     }
 }

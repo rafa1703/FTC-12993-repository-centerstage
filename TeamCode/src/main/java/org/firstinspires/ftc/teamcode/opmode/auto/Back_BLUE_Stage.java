@@ -136,7 +136,7 @@ public class Back_BLUE_Stage extends LinearOpMode {
         // can set drive constraints here
         while (opModeIsActive() && !isStopRequested()) {
             // Reading at the start of the loop
-            for (LynxModule module : hardwareMap.getAll(LynxModule.class)) { // turns on bulk reads cannot double read or it will call multiple bulkreads in the one thing
+            for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
                 module.clearBulkCache();
             }
 

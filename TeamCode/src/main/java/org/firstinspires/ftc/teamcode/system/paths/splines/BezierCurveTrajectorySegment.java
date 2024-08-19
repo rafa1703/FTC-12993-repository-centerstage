@@ -10,6 +10,10 @@ public class BezierCurveTrajectorySegment extends TrajectorySegment
     {
         this.curve = curve;
     }
+    public BezierCurveTrajectorySegment(Point[] points) // use this from now on lol
+    {
+        this.curve = new BezierCurve(points);
+    }
     public BezierCurveTrajectorySegment(BezierCurve curve, double maxSpeed)
     {
         this.curve = curve;
@@ -39,7 +43,7 @@ public class BezierCurveTrajectorySegment extends TrajectorySegment
     @Override
     public double getClosestT(Point point)
     {
-        return curve.returnClosesT(point);
+        return curve.returnClosestT(point);
     }
 
     @Override

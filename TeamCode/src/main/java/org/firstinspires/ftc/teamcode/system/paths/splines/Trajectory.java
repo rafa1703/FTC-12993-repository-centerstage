@@ -90,11 +90,6 @@ public class Trajectory
 
 
         Vector powerVector = gvfLogic.calculate(curve, pose, lastCurve, segments.get(u).getMaxSpeed());
-        // if we less then the threshold we can say we are finished
-        if (segments.get(numberOfSegments).getEndPoint().subtract(pose.toPoint()).getMagnitude() < threshold)
-        {
-            isFinished = true;
-        }
 
         if(!spatialMarkers.isEmpty()) // hope this doesn't break shit
         {
@@ -107,6 +102,13 @@ public class Trajectory
                 }
             }
         }
+
+        // if we less then the threshold we can say we are finished
+        if (segments.get(numberOfSegments).getEndPoint().subtract(pose.toPoint()).getMagnitude() < threshold)
+        {
+            isFinished = true;
+        }
+
         usePID = gvfLogic.usePID() && lastCurve && finalPose != null;
 
         return powerVector;

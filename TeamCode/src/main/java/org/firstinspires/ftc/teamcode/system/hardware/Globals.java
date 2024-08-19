@@ -242,8 +242,8 @@ public class Globals
      */
     public static double motorCaching(double current, double prev, double cachingTolerance, DcMotor motor)
     {
+        // This can also be done as wrapper to the hardware object
         if (
-            //Should it be >= or >
                 (Math.abs(current - prev) > cachingTolerance) ||
                         (current == 0.0 && prev != 0.0) ||
                         (current >= 1.0 && !(prev >= 1.0)) ||
